@@ -4,7 +4,7 @@
     <packaging>jar</packaging>
 
     <name>VK Java SDK</name>
-    <description>SDK for interacting with VK.com API</description>
+    <description>The Java library for working with VK api</description>
     <url>https://github.com/Storm-bit/vk-java-sdk.git</url>
 
     <parent>
