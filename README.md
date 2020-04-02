@@ -1,5 +1,5 @@
 # vk-java-sdk
-## The best Java library for working with VK api
+## The Java library for working with VK api
 
 
 
