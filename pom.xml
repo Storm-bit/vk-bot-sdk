@@ -3,9 +3,9 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
 
-    <name>VK Bot Java SDK</name>
+    <name>VK Java SDK</name>
     <description>SDK for interacting with VK.com API</description>
-    <url>https://github.com/petersamokhin/vk-bot-java-sdk</url>
+    <url>https://github.com/Storm-bit/vk-java-sdk.git</url>
 
     <parent>
         <groupId>org.sonatype.oss</groupId>
