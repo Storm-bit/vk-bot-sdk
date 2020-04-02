@@ -1,4 +1,4 @@
-# vk-java-sdk
+# Vk Bot SDK
 ## The Java library for working with VK api
 
 
