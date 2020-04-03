@@ -1031,16 +1031,18 @@ public class Message {
         String currentBiggestPhoto = null;
 
         for (int i = 0; i < photos.length(); i++) {
-            if (photos.getJSONObject(i).has("photo_1280"))
-                currentBiggestPhoto = photos.getJSONObject(i).getString("photo_1280");
-            else if (photos.getJSONObject(i).has("photo_807"))
-                currentBiggestPhoto = photos.getJSONObject(i).getString("photo_807");
-            else if (photos.getJSONObject(i).has("photo_604"))
-                currentBiggestPhoto = photos.getJSONObject(i).getString("photo_604");
-            else if (photos.getJSONObject(i).has("photo_130"))
-                currentBiggestPhoto = photos.getJSONObject(i).getString("photo_130");
-            else if (photos.getJSONObject(i).has("photo_75"))
-                currentBiggestPhoto = photos.getJSONObject(i).getString("photo_75");
+            String width = photos.getJSONObject(i).getJSONArray("sizes").getJSONObject(i).getString("width");
+
+            if (width.equals("1280"))
+                currentBiggestPhoto = width;
+            else if (width.equals("807"))
+                currentBiggestPhoto = width;
+            else if (width.equals("604"))
+                currentBiggestPhoto = width;
+            else if (width.equals("130"))
+                currentBiggestPhoto = width;
+            else if (width.equals("75"))
+                currentBiggestPhoto = width;
         }
 
         return currentBiggestPhoto;
