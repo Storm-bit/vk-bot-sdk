@@ -27,6 +27,7 @@ public class UpdatesHandler extends Thread {
      */
     private ConcurrentHashMap<String, Callback> callbacks = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, AbstractCallback> chatCallbacks = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, AbstractCallback> abstractCallbacks = new ConcurrentHashMap<>();
 
     /**
      * Client with access_token
@@ -86,6 +87,24 @@ public class UpdatesHandler extends Thread {
                 handleTypingUpdate(currentUpdate);
 
                 // handle every
+                handleEveryLongPollUpdate(currentUpdate);
+                break;
+            }
+
+            // Handling friend online
+            case 8: {
+                handleOnline(currentUpdate);
+
+                //handle every
+                handleEveryLongPollUpdate(currentUpdate);
+                break;
+            }
+
+            // Handling friend offline
+            case 9: {
+                handleOffline(currentUpdate);
+
+                //handle every
                 handleEveryLongPollUpdate(currentUpdate);
                 break;
             }
@@ -371,6 +390,25 @@ public class UpdatesHandler extends Thread {
         }
     }
 
+    private void handleOnline(JSONArray updateObject) {
+        Integer targetId = updateObject.getInt(1),
+                timestamp = updateObject.getInt(3);
+
+
+        if (callbacks.containsKey("OnFriendOnlineCallback")) {
+            ((CallbackDouble<Integer, Integer>) abstractCallbacks.get("OnFriendOnlineCallback")).onEvent(targetId, timestamp);
+        }
+    }
+
+    private void handleOffline(JSONArray updateObject) {
+        Integer targetId = updateObject.getInt(1),
+                timestamp = updateObject.getInt(3);
+
+        if (callbacks.containsKey("OnFriendOfflineCallback")) {
+            ((CallbackDouble<Integer, Integer>) abstractCallbacks.get("OnFriendOfflineCallback")).onEvent(targetId, timestamp);
+        }
+    }
+
     /**
      * Handle dialog with typing user
      */
@@ -392,6 +430,10 @@ public class UpdatesHandler extends Thread {
         this.callbacks.put(name, callback);
     }
 
+    void registerAbstractCallback(String name, AbstractCallback callback) {
+        this.abstractCallbacks.put(name, callback);
+    }
+
     /**
      * Add callback to the map
      *
@@ -407,6 +449,10 @@ public class UpdatesHandler extends Thread {
      */
     int callbacksCount() {
         return this.callbacks.size();
+    }
+
+    int abstractCallbacksCount() {
+        return this.abstractCallbacks.size();
     }
 
     /**

@@ -2,6 +2,7 @@ package com.github.stormbit.sdk.longpoll;
 
 import com.github.stormbit.sdk.callbacks.AbstractCallback;
 import com.github.stormbit.sdk.callbacks.Callback;
+import com.github.stormbit.sdk.callbacks.CallbackDouble;
 import com.github.stormbit.sdk.clients.Client;
 import com.github.stormbit.sdk.longpoll.responses.GetLongPollServerResponse;
 import com.github.stormbit.sdk.utils.Utils;
@@ -130,6 +131,16 @@ public class LongPoll {
      */
     public void registerCallback(String name, Callback callback) {
         updatesHandler.registerCallback(name, callback);
+    }
+
+    /**
+     * Add callback to the map
+     *
+     * @param name     Callback name
+     * @param callback Callback
+     */
+    public void registerAbstractCallback(String name, AbstractCallback callback) {
+        updatesHandler.registerAbstractCallback(name, callback);
     }
 
     /**

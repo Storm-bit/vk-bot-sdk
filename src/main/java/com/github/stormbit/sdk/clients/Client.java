@@ -199,6 +199,15 @@ public abstract class Client {
         this.longPoll().registerCallback("OnWallMessageCallback", callback);
     }
 
+    /* Other */
+    public void onFriendOnline(CallbackDouble<Integer, Integer> callback) {
+        this.longPoll().registerAbstractCallback("OnFriendOnlineCallback", callback);
+    }
+
+    public void onFriendOffline(CallbackDouble<Integer, Integer> callback) {
+        this.longPoll().registerAbstractCallback("OnFriendOfflineCallback", callback);
+    }
+
     /* Commands */
 
     public void onCommand(Object command, Callback<Message> callback) {
