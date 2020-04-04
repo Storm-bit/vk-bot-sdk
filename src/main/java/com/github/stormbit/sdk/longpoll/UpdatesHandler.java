@@ -82,7 +82,7 @@ public class UpdatesHandler extends Thread {
             }
 
             // Handling update (user started typing)
-            case 61: {
+            case 62: {
                 handleTypingUpdate(currentUpdate);
 
                 // handle every
