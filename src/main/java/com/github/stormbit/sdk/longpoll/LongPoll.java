@@ -186,7 +186,7 @@ public class LongPoll {
     }
 
     private GetLongPollServerResponse getLongPollServer() {
-        var method = "messages.getLongPollServer";
+        String method = "messages.getLongPollServer";
 
         if (!Utils._hashes.has(method)) {
             Utils.get_hash(client.get_auth(), method);

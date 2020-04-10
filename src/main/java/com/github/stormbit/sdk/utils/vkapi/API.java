@@ -266,7 +266,7 @@ public class API {
                         prms.put(key, data.get(key));
                     }
 
-                    var responseString = user.get_auth().session.post(Utils.URL)
+                    String responseString = user.get_auth().session.post(Utils.URL)
                             .body(prms)
                             .send().readToText().replaceAll("[<!>-]", "");
 
