@@ -72,7 +72,6 @@
         <developerConnection>
             scm:git:ssh://git@github.com:Storm-bit/vk-bot-sdk.git
         </developerConnection>
-      <tag>HEAD</tag>
   </scm>
 
     <developers>
@@ -166,7 +165,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/nexus/</nexusUrl>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
