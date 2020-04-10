@@ -4,7 +4,7 @@
     <packaging>pom</packaging>
     <artifactId>com.github.stormbit</artifactId>
     <groupId>vk-bot-sdk</groupId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
 
     <name>VK Bot SDK</name>
     <description>The Java library for working with VK api</description>
@@ -72,6 +72,7 @@
         <developerConnection>
             scm:git:ssh://git@github.com:Storm-bit/vk-bot-sdk.git
         </developerConnection>
+    <tag>com.github.stormbit-1.1</tag>
   </scm>
 
     <developers>
@@ -131,6 +132,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -165,7 +167,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <nexusUrl>https://oss.sonatype.org/nexus/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
