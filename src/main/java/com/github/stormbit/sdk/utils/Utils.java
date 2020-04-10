@@ -30,6 +30,8 @@ public class Utils {
 
     /**
      * Analog of JS setTimeout
+     * @param runnable runnable
+     * @param delay delay
      */
     public static void setTimeout(Runnable runnable, int delay) {
         new Thread(() -> {
@@ -71,6 +73,8 @@ public class Utils {
 
     /**
      * Arrays and lists to comma separated string
+     * @param o object
+     * @return query string
      */
     public static String toQueryString(Object o) {
 
@@ -123,6 +127,8 @@ public class Utils {
 
     /**
      * Convert params query to map
+     * @param query query
+     * @return JSONObject query
      */
     public static JSONObject explodeQuery(String query) {
 

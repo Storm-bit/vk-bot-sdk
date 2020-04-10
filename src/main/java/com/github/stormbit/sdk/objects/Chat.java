@@ -2,7 +2,6 @@ package com.github.stormbit.sdk.objects;
 
 import com.github.stormbit.sdk.callbacks.Callback;
 import com.github.stormbit.sdk.clients.Client;
-import com.github.stormbit.sdk.clients.Group;
 import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.web.MultipartUtility;
 import org.json.JSONArray;
@@ -20,6 +19,7 @@ import java.nio.file.Paths;
 
 /**
  * Created by PeterSamokhin on 29/09/2017 02:49
+ * Updated by Stormbit on 10/04/2020 16:37
  */
 public class Chat {
 
@@ -33,10 +33,6 @@ public class Chat {
     public Chat(Client client, Integer chatId) {
         this.client = client;
         this.chatId = chatId;
-
-        if (client instanceof Group) {
-            LOG.error("Now groups can't work with chats, sorry.");
-        }
     }
 
     public void addUser(Integer userId, Callback<Object>... callbacks) {

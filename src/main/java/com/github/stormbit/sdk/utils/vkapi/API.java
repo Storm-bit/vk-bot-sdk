@@ -44,7 +44,7 @@ public class API {
     /**
      * todo Not all methods available with group tokens, and few methods available without token
      * todo Need to make client with both tokens, or any another conclusion
-     *
+     * @param auth Auth object
      */
     public API(Auth auth) {
         if (!executionStarted) {
@@ -142,6 +142,9 @@ public class API {
     /**
      * Call to 'execute' method, because can not call API.execute inside execute.
      * More: <a href="https://vk.com/dev/execute">link</a>;
+     * @param code code
+     * @param user User object
+     * @return JSONObject response of VK answer
      */
     public JSONObject execute(String code, User user) {
 
@@ -172,6 +175,7 @@ public class API {
      * Execute float count of calls, up to 25
      *
      * @param calls single call to VK API or calls separated by comma.
+     * @param user User object
      * @return JSONArray with responses of calls
      * @see CallSync
      */
@@ -202,6 +206,7 @@ public class API {
      *
      * @param method Method name
      * @param params Params as string, JSONObject or Map
+     * @param user User object
      * @return JSONObject response of VK answer
      */
     public JSONObject callSync(String method, Object params, Client user) {
@@ -279,6 +284,7 @@ public class API {
      * Call to VK API
      *
      * @param method Method name
+     * @param user User object
      * @param params Floating count of params
      * @return JSONObject response of VK answer
      */

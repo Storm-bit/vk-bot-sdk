@@ -40,6 +40,12 @@ public abstract class Client {
     private ConcurrentHashMap<Integer, Chat> chats = new ConcurrentHashMap<>();
 
 
+    /**
+     * Default constructor
+     * @param login        Login of your VK bot account
+     * @param password     Password of your VK bot account
+     * @param id           User or group id
+     */
     Client(String login, String password, int id) {
         _auth = new Auth(login, password);
         _auth.auth();
@@ -49,21 +55,6 @@ public abstract class Client {
         this.longPoll = new LongPoll(this);
     }
 
-    /**
-     * Default constructor
-     *
-     * @param id           User or group id
-     * @param access_token Access token key
-     */
-    Client(Integer id, String access_token, String login, String password) {
-        _auth = new Auth(login, password);
-        _auth.auth();
-
-        this.id = id;
-        this.longPoll = new LongPoll(this);
-
-        api = new API(this);
-    }
 
     public void setLongPoll(LongPoll LP) {
 
@@ -82,6 +73,7 @@ public abstract class Client {
 
     /**
      * Get longpoll of current client
+     * @return longpoll object
      */
     public LongPoll longPoll() {
         return longPoll;
@@ -93,6 +85,7 @@ public abstract class Client {
 
     /**
      * Get API for making requests
+     * @return api object
      */
     public API api() {
         return api;
@@ -102,6 +95,7 @@ public abstract class Client {
      * If the client need to start typing
      * after receiving message
      * and until client's message is sent
+     * @param enable true or false
      */
     public void enableTyping(boolean enable) {
         this.longPoll().enableTyping(enable);
@@ -230,6 +224,7 @@ public abstract class Client {
     /**
      * If true, all updates from longpoll server
      * will be logged to level 'INFO'
+     * @param enable true or false
      */
     public void enableLoggingUpdates(boolean enable) {
         this.longPoll().enableLoggingUpdates(enable);

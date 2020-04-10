@@ -320,6 +320,7 @@ public class LongPoll {
      * If the client need to start typing
      * after receiving message
      * and until client's message is sent
+     * @param enable true or false
      */
     public void enableTyping(boolean enable) {
         this.updatesHandler.sendTyping = enable;

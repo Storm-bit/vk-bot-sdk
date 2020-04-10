@@ -27,6 +27,7 @@ public class MultipartUtility {
     /**
      * This constructor initializes a new HTTP POST request with content type
      * is set to multipart/form-data
+     * @param requestURL request link
      */
     public MultipartUtility(String requestURL) {
 
@@ -73,7 +74,8 @@ public class MultipartUtility {
     /**
      * Adds a upload file section to the request
      *
-     * @param fieldName  name of field in body of POST-requestx
+     * @param fieldName  name of field in body of POST-request
+     * @param fileName  filename
      * @param bytes     an array of bytes to be uploaded
      */
     public void addBytesPart(String fieldName, String fileName, byte[] bytes) {

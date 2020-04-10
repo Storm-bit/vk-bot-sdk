@@ -54,10 +54,19 @@ public class Message {
      * Constructor for sent message
      */
     public Message() {
+
     }
 
     /**
      * Constructor for received message
+     * @param client client
+     * @param messageId message id
+     * @param flags flags
+     * @param peerId peer id
+     * @param timestamp timestamp
+     * @param text message text
+     * @param attachments message attachments
+     * @param randomId random id
      */
     public Message(Client client, Integer messageId, Integer flags, Integer peerId, Integer timestamp, String text, JSONObject attachments, Integer randomId) {
 
@@ -75,6 +84,8 @@ public class Message {
 
     /**
      * Your client with id, access token
+     * @param client client
+     * @return this
      */
     public Message from(Client client) {
         api = client.api();
@@ -83,6 +94,8 @@ public class Message {
 
     /**
      * ID of target dialog
+     * @param peerId target
+     * @return this
      */
     public Message to(Integer peerId) {
         this.peerId = peerId;
@@ -91,6 +104,8 @@ public class Message {
 
     /**
      * ID of sticker, only for user tokens
+     * @param id sticker id
+     * @return this
      */
     public Message sticker(Integer id) {
         this.stickerId = id;
@@ -99,6 +114,8 @@ public class Message {
 
     /**
      * IDs of forwarded messages
+     * @param ids message ids
+     * @return this
      */
     public Message forwardedMessages(Object... ids) {
 
@@ -110,6 +127,8 @@ public class Message {
 
     /**
      * Message text
+     * @param text message content
+     * @return this
      */
     public Message text(Object text) {
         this.text = String.valueOf(text);
@@ -118,6 +137,8 @@ public class Message {
 
     /**
      * Message title (bold text)
+     * @param title message title
+     * @return this
      */
     public Message title(Object title) {
         this.title = String.valueOf(title);
@@ -126,6 +147,8 @@ public class Message {
 
     /**
      * Message attachments
+     * @param attachments attachments
+     * @return this
      */
     public Message attachments(String... attachments) {
 
@@ -141,6 +164,8 @@ public class Message {
 
     /**
      * Message random_id
+     * @param randomId random
+     * @return this
      */
     public Message randomId(Integer randomId) {
         this.randomId = randomId;
@@ -151,6 +176,7 @@ public class Message {
      * Synchronous adding photo to the message
      *
      * @param photo String URL, link to vk doc or path to file
+     * @return this
      */
     public Message photo(String photo) {
 
@@ -260,6 +286,7 @@ public class Message {
      *
      * @param doc       String URL, link to vk doc or path to file
      * @param typeOfDoc Type of doc, 'audio_message' or 'graffiti' ('doc' as default)
+     * @return this
      */
     public Message doc(String doc, DocTypes typeOfDoc) {
 
@@ -387,6 +414,7 @@ public class Message {
      * Synchronous adding doc to the message
      *
      * @param doc String URL, link to vk doc or path to file
+     * @return this
      */
     public Message doc(String doc) {
         this.doc(doc, DocTypes.DOC);
@@ -399,6 +427,7 @@ public class Message {
      * Works slower that sync photo adding, but will be called from execute
      *
      * @param photo Photo link: url, from disk or already uploaded to VK as photo{owner_id}_{id}
+     * @return this
      */
     public Message photoAsync(String photo) {
 
@@ -415,6 +444,8 @@ public class Message {
 
     /**
      * Async uploading photos
+     * @param photo Photo link: url, from disk or already uploaded to VK as photo{owner_id}_{id}
+     * @param callback callback
      */
     public void uploadPhoto(String photo, Callback<Object> callback) {
 
@@ -536,6 +567,8 @@ public class Message {
 
     /**
      * Async uploading doc
+     * @param doc Doc link: url, from disk or already uploaded to VK as doc{owner_id}_{id}
+     * @param callback callback
      */
     public void uploadDoc(JSONObject doc, Callback<Object> callback) {
 
@@ -662,6 +695,8 @@ public class Message {
      * Attach doc to message
      *
      * @param doc Doc link: url, from disk or already uploaded to VK as doc{owner_id}_{id}
+     * @param type type
+     * @return this
      */
     public Message docAsync(String doc, DocTypes type) {
 
@@ -679,6 +714,7 @@ public class Message {
      * Attach doc to message
      *
      * @param doc Doc link: url, from disk or already uploaded to VK as doc{owner_id}_{id}
+     * @return this
      */
     public Message docAsync(String doc) {
 
@@ -762,6 +798,7 @@ public class Message {
 
     /**
      * Get the type of message
+     * @return type of message
      */
     public String messageType() {
 
@@ -817,6 +854,7 @@ public class Message {
 
     /**
      * Get attachments from message
+     * @return JSONArray attachments
      */
     public JSONArray getAttachments() {
 
