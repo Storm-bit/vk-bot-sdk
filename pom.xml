@@ -4,7 +4,7 @@
     <packaging>pom</packaging>
     <artifactId>com.github.stormbit</artifactId>
     <groupId>vk-bot-sdk</groupId>
-    <version>1.1</version>
+    <version>1.2-SNAPSHOT</version>
 
     <name>VK Bot SDK</name>
     <description>The Java library for working with VK api</description>
@@ -72,7 +72,7 @@
         <developerConnection>
             scm:git:ssh://git@github.com:Storm-bit/vk-bot-sdk.git
         </developerConnection>
-    <tag>com.github.stormbit-1.1</tag>
+    <tag>HEAD</tag>
   </scm>
 
     <developers>
