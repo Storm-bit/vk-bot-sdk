@@ -79,7 +79,6 @@
         <connection>scm:git:git://github.com/Storm-bit/vk-bot-sdk.git</connection>
         <developerConnection>scm:git:ssh://git@github.com:Storm-bit/vk-bot-sdk.git</developerConnection>
         <url>https://github.com/Storm-bit/vk-bot-sdk</url>
-
         <tag>HEAD</tag>
     </scm>
 
