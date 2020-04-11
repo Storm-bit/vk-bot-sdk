@@ -10,6 +10,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.FormElement;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +55,11 @@ public class Auth {
                     .send().readToText();
 
             if (!response.contains("onLoginDone")) {
-                throw new NotValidAuthorization("Wrong password");
+                throw new NotValidAuthorization("Incorrect login or password");
             } else {
                 a = this;
             }
+
         } catch (NotValidAuthorization e) {
             e.printStackTrace();
             System.exit(-1);
@@ -76,6 +78,11 @@ public class Auth {
             res = form.submit()
                     .userAgent(USER_AGENT)
                     .execute();
+
+        } catch (UnknownHostException e) {
+            System.out.println("Error, try again later");
+            System.exit(-1);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
