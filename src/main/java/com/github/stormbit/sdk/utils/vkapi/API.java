@@ -17,6 +17,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Created by PeterSamokhin on 28/09/2017 21:59
+ * Updated by RomanBoycov on 03/04/2020 19:40
+ *
  * Simple interacting with VK API
  */
 public class API {

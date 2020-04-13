@@ -16,6 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collector;
 
+/**
+ * Created by RomanBoycov on 03/04/2020 19:40
+ */
+
 public class Auth {
     private String host = "https://vk.com/";
     private String _login;

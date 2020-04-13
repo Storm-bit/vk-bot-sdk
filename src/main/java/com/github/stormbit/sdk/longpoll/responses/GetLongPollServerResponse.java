@@ -1,7 +1,9 @@
 package com.github.stormbit.sdk.longpoll.responses;
 
 /**
- * Deserialized object of VK response
+ * Created by PeterSamokhin on 28/09/2017 21:59
+ *
+ * Deserialize object of VK response
  */
 public class GetLongPollServerResponse {
 

@@ -5,4 +5,5 @@ package com.github.stormbit.sdk.callbacks;
  * Updated by RomanBoycov on 03/04/2020 19:40
  */
 public interface AbstractCallback {
+
 }

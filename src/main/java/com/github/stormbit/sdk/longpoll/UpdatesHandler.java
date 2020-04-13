@@ -14,6 +14,9 @@ import static com.github.stormbit.sdk.clients.Client.scheduler;
 import static com.github.stormbit.sdk.clients.Client.service;
 
 /**
+ * Created by PeterSamokhin on 28/09/2017 21:59
+ * Updated by RomanBoycov on 03/04/2020 19:40
+ *
  * Class for handling all updates in other thread
  */
 public class UpdatesHandler extends Thread {

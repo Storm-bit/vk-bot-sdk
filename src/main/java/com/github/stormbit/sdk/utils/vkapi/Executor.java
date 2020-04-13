@@ -15,6 +15,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
+ * Created by PeterSamokhin on 28/09/2017 21:59
+ * Updated by RomanBoycov on 03/04/2020 19:40
+ *
  * Best way to use VK API: you can call up to 25 vk api methods by call execute once
  * Because without execute you only can call up to 3 methods per second
  * <p>
