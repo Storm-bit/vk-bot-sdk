@@ -853,6 +853,21 @@ public class Message {
     }
 
     /**
+     * @return JSONObject with reply message or {}
+     */
+    public JSONObject getReplyMessage() {
+        if (hasFwds()) {
+            JSONObject response = api.callSync("messages.getById", _client, "message_ids", getMessageId());
+
+            if (response.has("response") && response.getJSONObject("response").getJSONArray("items").getJSONObject(0).has("reply_message")) {
+                return response.getJSONObject("response").getJSONArray("items").getJSONObject(0).getJSONObject("reply_message");
+            }
+        }
+
+        return new JSONObject();
+    }
+
+    /**
      * Get attachments from message
      * @return JSONArray attachments
      */
