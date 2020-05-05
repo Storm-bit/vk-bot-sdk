@@ -501,7 +501,7 @@ public class Message {
 
         if (photoBytes != null) {
 
-            JSONObject params_getMessagesUploadServer = new JSONObject().put("peer_id", peerId);
+            JSONObject params_getMessagesUploadServer = new JSONObject().put("peer_id", chatIdLong);
             api.call("photos.getMessagesUploadServer", params_getMessagesUploadServer, response -> {
 
                 if (response.toString().equalsIgnoreCase("false")) {
@@ -778,7 +778,7 @@ public class Message {
 
         JSONObject params = new JSONObject();
 
-        params.put("message", text);
+        if (!text.isEmpty()) params.put("message", text);
         if (title != null && title.length() > 0) params.put("title", title);
         if (randomId != null) params.put("random_id", randomId);
         params.put("peer_id", peerId);
@@ -1084,18 +1084,19 @@ public class Message {
         String currentBiggestPhoto = null;
 
         for (int i = 0; i < photos.length(); i++) {
-            String width = photos.getJSONObject(i).getJSONArray("sizes").getJSONObject(i).getString("width");
+            JSONObject photo = photos.getJSONObject(i);
+            int width = photo.getInt("width");
 
-            if (width.equals("1280"))
-                currentBiggestPhoto = width;
-            else if (width.equals("807"))
-                currentBiggestPhoto = width;
-            else if (width.equals("604"))
-                currentBiggestPhoto = width;
-            else if (width.equals("130"))
-                currentBiggestPhoto = width;
-            else if (width.equals("75"))
-                currentBiggestPhoto = width;
+            if (width == 1280)
+                currentBiggestPhoto = photo.getString("url");
+            else if (width == 807)
+                currentBiggestPhoto = photo.getString("url");
+            else if (width == 604)
+                currentBiggestPhoto = photo.getString("url");
+            else if (width == 130)
+                currentBiggestPhoto = photo.getString("url");
+            else if (width == 75)
+                currentBiggestPhoto = photo.getString("url");
         }
 
         return currentBiggestPhoto;
