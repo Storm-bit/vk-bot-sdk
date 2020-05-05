@@ -104,7 +104,7 @@ public class API {
                 }
             }
         } catch (Exception e) {
-            LOG.error("Some error occured when calling VK API method {} with params {}, error is {}", method, params.toString(), e);
+            LOG.error(String.format("Some error occured when calling VK API method {%s} with params {%s}, error is {%s}", method, params.toString(), e));
         }
     }
 
@@ -311,7 +311,7 @@ public class API {
                 }
             }
         } catch (Exception e) {
-            LOG.error("Some error occured when calling VK API: {0}", e);
+            LOG.error(String.format("Some error occured when calling VK API: {%s}", e));
         }
 
         return new JSONObject();
