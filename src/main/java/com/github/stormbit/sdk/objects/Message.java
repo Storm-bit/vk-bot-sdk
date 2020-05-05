@@ -236,8 +236,7 @@ public class Message {
         if (photoBytes != null) {
 
             // Getting of server for uploading the photo
-            String getUploadServerQuery = "https://api.vk.com/method/photos.getMessagesUploadServer?access_token=" + accessToken + "&peer_id=" + this.peerId + "&v=5.67";
-            JSONObject getUploadServerResponse = new JSONObject(Connection.getRequestResponse(getUploadServerQuery));
+            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", _client, new JSONObject().put("peer_id", this.chatIdLong));
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
 
             // Some error
