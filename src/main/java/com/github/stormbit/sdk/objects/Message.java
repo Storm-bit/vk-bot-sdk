@@ -89,6 +89,7 @@ public class Message {
      */
     public Message from(Client client) {
         api = client.api();
+        _client = client;
         return this;
     }
 
