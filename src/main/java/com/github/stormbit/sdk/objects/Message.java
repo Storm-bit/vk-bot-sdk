@@ -236,7 +236,7 @@ public class Message {
         if (photoBytes != null) {
 
             // Getting of server for uploading the photo
-            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", _client, new JSONObject().put("peer_id", this.chatIdLong));
+            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", _client, new JSONObject().put("peer_id", this.peerId));
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
 
             // Some error
