@@ -275,6 +275,6 @@ public abstract class Client {
 
     @Override
     public String toString() {
-        return "";
+        return String.format("{\"id\": %s}", id);
     }
 }

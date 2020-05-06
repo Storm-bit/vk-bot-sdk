@@ -5,7 +5,6 @@ import com.github.stormbit.sdk.clients.Client;
 import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.vkapi.API;
 import com.github.stormbit.sdk.utils.vkapi.docs.DocTypes;
-import com.github.stormbit.sdk.utils.web.Connection;
 import com.github.stormbit.sdk.utils.web.MultipartUtility;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -33,7 +32,7 @@ public class Message {
     private static final Logger LOG = LoggerFactory.getLogger(Message.class);
 
     private Integer messageId, flags, peerId, timestamp, randomId, stickerId, chatId, chatIdLong;
-    private String text, accessToken, title;
+    private String text, title;
     private API api;
     private Client _client;
 
@@ -44,9 +43,11 @@ public class Message {
     private JSONObject attachmentsOfReceivedMessage;
 
     /**
-     * Attahments in format [photo62802565_456241137, photo111_111, doc100_500]
+     * Attachments in format [photo62802565_456241137, photo111_111, doc100_500]
      */
-    private CopyOnWriteArrayList<String> attachments = new CopyOnWriteArrayList<>(), forwardedMessages = new CopyOnWriteArrayList<>(), photosToUpload = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<String> attachments = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<String> forwardedMessages = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<String> photosToUpload = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<JSONObject> docsToUpload = new CopyOnWriteArrayList<>();
 
     /**
@@ -82,7 +83,7 @@ public class Message {
     }
 
     /**
-     * Your client with id, access token
+     * Your client with id
      * @param client client
      * @return this
      */
@@ -103,7 +104,7 @@ public class Message {
     }
 
     /**
-     * ID of sticker, only for user tokens
+     * ID of sticker
      * @param id sticker id
      * @return this
      */
@@ -239,13 +240,13 @@ public class Message {
             JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", _client, "peer_id", this.peerId);
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
 
-            uploadUrl = uploadUrl.replaceAll("aid=3", String.format("aid=%s", -getUploadServerResponse.getJSONObject("response").getInt("album_id")));
-
             // Some error
             if (uploadUrl == null) {
                 LOG.error("No upload url in response: {}", getUploadServerResponse);
                 return this;
             }
+
+            uploadUrl = uploadUrl.replaceAll("aid=3", String.format("aid=%s", -getUploadServerResponse.getJSONObject("response").getInt("album_id")));
 
             String mimeType = "png";
 
@@ -258,7 +259,6 @@ public class Message {
             }
 
             // Uploading the photo
-
             MultipartUtility multipartUtility = new MultipartUtility(uploadUrl);
             multipartUtility.addBytesPart("photo", "photo."+mimeType, photoBytes);
             String uploadingOfPhotoResponseString = multipartUtility.finish();
@@ -274,7 +274,7 @@ public class Message {
 
             // Getting necessary params
             String server, photo_param, hash;
-            if (uploadingOfPhotoResponse.has("server") & uploadingOfPhotoResponse.has("photo") && uploadingOfPhotoResponse.has("hash")) {
+            if (uploadingOfPhotoResponse.has("server") && uploadingOfPhotoResponse.has("photo") && uploadingOfPhotoResponse.has("hash")) {
                 server = "" + uploadingOfPhotoResponse.getInt("server");
                 photo_param = uploadingOfPhotoResponse.get("photo").toString();
                 hash = uploadingOfPhotoResponse.getString("hash");
@@ -351,8 +351,8 @@ public class Message {
                     } finally {
                         Utils.close(conn);
                     }
-                } catch (IOException ignored) {
-                    LOG.error("Error {} occured when reading URL {}", ignored.toString(), doc);
+                } catch (IOException e) {
+                    LOG.error("Error {} occured when reading URL {}", e.toString(), doc);
                     return this;
                 }
                 break;
@@ -375,6 +375,8 @@ public class Message {
 
             // Getting of server for uploading the photo
             JSONObject getUploadServerResponse = api.callSync("docs.getMessagesUploadServer", _client, "peer_id", this.peerId, "type", typeOfDoc.getType());
+
+            // if album_id == 3, replace
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
 
             // Some error
@@ -394,8 +396,8 @@ public class Message {
 
             try {
                 uploadingOfDocResponse = new JSONObject(uploadingOfDocResponseString);
-            } catch (JSONException ignored) {
-                LOG.error("Bad response of uploading doc: {}, error: {}", uploadingOfDocResponseString, ignored.toString());
+            } catch (JSONException e) {
+                LOG.error("Bad response of uploading doc: {}, error: {}", uploadingOfDocResponseString, e.toString());
                 return this;
             }
 
@@ -494,8 +496,8 @@ public class Message {
             case "fromUrl": {
                 try {
                     photoBytes = Utils.toByteArray(photoUrl);
-                } catch (IOException ignored) {
-                    LOG.error("Error {} occured when reading URL {}", ignored.toString(), photo);
+                } catch (IOException e) {
+                    LOG.error("Error {} occured when reading URL {}", e.toString(), photo);
                     callback.onResult("false");
                     return;
                 }
@@ -1136,10 +1138,6 @@ public class Message {
 
     public void setChatId(Integer chatId) {
         this.chatId = chatId;
-    }
-
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
     }
 
     private void setAttachments(JSONObject attachments) {
