@@ -35,7 +35,7 @@ public class API {
      * todo Not all methods available with group tokens, and few methods available without token
      * todo Need to make client with both tokens, or any another conclusion
      *
-     * @param client Client with token
+     * @param client Client
      */
     public API(Client client) {
         if (!executionStarted) {
@@ -104,7 +104,7 @@ public class API {
                 }
             }
         } catch (Exception e) {
-            LOG.error(String.format("Some error occured when calling VK API method {%s} with params {%s}, error is {%s}", method, params.toString(), e));
+            LOG.error("Some error occurred when calling VK API method {} with params {}, error is {}", method, params.toString(), e.getMessage());
         }
     }
 
@@ -278,7 +278,7 @@ public class API {
 
             }
         } catch (Exception e) {
-            LOG.error(String.format("Some error occurred when calling VK API: {%s}", e));
+            LOG.error("Some error occurred when calling VK API: {}", e.getMessage());
         }
         return new JSONObject();
     }
@@ -311,7 +311,7 @@ public class API {
                 }
             }
         } catch (Exception e) {
-            LOG.error(String.format("Some error occured when calling VK API: {%s}", e));
+            LOG.error("Some error occurred when calling VK API: {}", e.getMessage());
         }
 
         return new JSONObject();

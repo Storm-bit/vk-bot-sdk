@@ -221,8 +221,8 @@ public class Message {
             case "fromUrl": {
                 try {
                     photoBytes = Utils.toByteArray(photoUrl);
-                } catch (IOException ignored) {
-                    LOG.error("Error {} occured when reading URL {}", ignored.toString(), photo);
+                } catch (IOException e) {
+                    LOG.error("Error {} occured when reading URL {}", e.toString(), photo);
                     return this;
                 }
                 break;
@@ -246,6 +246,7 @@ public class Message {
                 return this;
             }
 
+            // if album_id == 3 make it negative
             uploadUrl = uploadUrl.replaceAll("aid=3", String.format("aid=%s", -getUploadServerResponse.getJSONObject("response").getInt("album_id")));
 
             String mimeType = "png";
@@ -295,7 +296,6 @@ public class Message {
 
     /**
      * Synchronous adding doc to the message
-     *
      * @param doc       String URL, link to vk doc or path to file
      * @param typeOfDoc Type of doc, 'audio_message' or 'graffiti' ('doc' as default)
      * @return this
@@ -334,7 +334,7 @@ public class Message {
                 try {
                     docBytes = Files.readAllBytes(Paths.get(docFile.toURI()));
                     fileNameField = docFile.getName();
-                } catch (IOException ignored) {
+                } catch (IOException e) {
                     LOG.error("Error when reading file {}", docFile.getAbsolutePath());
                     return this;
                 }
@@ -376,7 +376,6 @@ public class Message {
             // Getting of server for uploading the photo
             JSONObject getUploadServerResponse = api.callSync("docs.getMessagesUploadServer", _client, "peer_id", this.peerId, "type", typeOfDoc.getType());
 
-            // if album_id == 3, replace
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
 
             // Some error
@@ -524,8 +523,22 @@ public class Message {
 
                 String uploadUrl = new JSONObject(response.toString()).getString("upload_url");
 
+                // if album_id == 3 make it negative
+                uploadUrl = uploadUrl.replaceAll("aid=3", String.format("aid=%s", -new JSONObject(response.toString()).getInt("album_id")));
+
+                String mimeType = "png";
+
+                try {
+                    InputStream is = new BufferedInputStream(new ByteArrayInputStream(photoBytes));
+                    mimeType = URLConnection.guessContentTypeFromStream(is);
+                    mimeType = mimeType.substring(mimeType.lastIndexOf('/')+1).replace("jpeg", "jpg");
+                } catch (IOException e) {
+                    LOG.error(e.getMessage());
+                }
+
+                // Uploading the photo
                 MultipartUtility multipartUtility = new MultipartUtility(uploadUrl);
-                multipartUtility.addBytesPart("photo", "photo.png", photoBytes);
+                multipartUtility.addBytesPart("photo", "photo."+mimeType, photoBytes);
 
                 String response_uploadFileString = multipartUtility.finish();
 
@@ -566,11 +579,11 @@ public class Message {
                         return;
                     }
 
-                    JSONObject response_saveMessagesPhotoe = new JSONArray(response1.toString()).getJSONObject(0);
+                    JSONObject response_saveMessagesPhoto = new JSONArray(response1.toString()).getJSONObject(0);
 
-                    int ownerId = response_saveMessagesPhotoe.getInt("owner_id"), id = response_saveMessagesPhotoe.getInt("id");
+                    int ownerId = response_saveMessagesPhoto.getInt("owner_id"), id = response_saveMessagesPhoto.getInt("id");
 
-                    String attach = "photo" + ownerId + '_' + id;
+                    String attach = String.format("photo%s_%s", ownerId, id);
                     callback.onResult(attach);
                 });
             });
