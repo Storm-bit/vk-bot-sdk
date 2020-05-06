@@ -13,8 +13,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -237,8 +236,10 @@ public class Message {
         if (photoBytes != null) {
 
             // Getting of server for uploading the photo
-            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", _client,"peer_id", this.peerId);
+            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", _client, "peer_id", this.peerId);
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
+
+            uploadUrl = uploadUrl.replaceAll("aid=3", String.format("aid=%s", -getUploadServerResponse.getJSONObject("response").getInt("album_id")));
 
             // Some error
             if (uploadUrl == null) {
@@ -246,17 +247,28 @@ public class Message {
                 return this;
             }
 
+            String mimeType = "png";
+
+            try {
+                InputStream is = new BufferedInputStream(new ByteArrayInputStream(photoBytes));
+                mimeType = URLConnection.guessContentTypeFromStream(is);
+                mimeType = mimeType.substring(mimeType.lastIndexOf('/')+1).replace("jpeg", "jpg");
+            } catch (IOException e) {
+                LOG.error(e.getMessage());
+            }
+
             // Uploading the photo
+
             MultipartUtility multipartUtility = new MultipartUtility(uploadUrl);
-            multipartUtility.addBytesPart("photo", "photo.png", photoBytes);
+            multipartUtility.addBytesPart("photo", "photo."+mimeType, photoBytes);
             String uploadingOfPhotoResponseString = multipartUtility.finish();
 
             JSONObject uploadingOfPhotoResponse;
 
             try {
                 uploadingOfPhotoResponse = new JSONObject(uploadingOfPhotoResponseString);
-            } catch (JSONException ignored) {
-                LOG.error("Bad response of uploading photo: {}, error: {}", uploadingOfPhotoResponseString, ignored.toString());
+            } catch (JSONException e) {
+                LOG.error("Bad response of uploading photo: {}, error: {}", uploadingOfPhotoResponseString, e.toString());
                 return this;
             }
 
@@ -272,8 +284,8 @@ public class Message {
             }
 
             // Saving the photo
-            String saveMessagesPhotoQuery = "https://api.vk.com/method/photos.saveMessagesPhoto?access_token=" + accessToken + "&v=5.67&server=" + server + "&photo=" + photo_param + "&hash=" + hash;
-            JSONObject saveMessagesPhotoResponse = new JSONObject(Connection.getRequestResponse(saveMessagesPhotoQuery));
+            JSONObject saveMessagesPhotoResponse = api.callSync("photos.saveMessagesPhoto", _client, "server", server, "photo", photo_param, "hash", hash);
+
             String photoAsAttach = saveMessagesPhotoResponse.has("response") ? "photo" + saveMessagesPhotoResponse.getJSONArray("response").getJSONObject(0).getInt("owner_id") + "_" + saveMessagesPhotoResponse.getJSONArray("response").getJSONObject(0).getInt("id") : "";
 
             this.attachments.add(photoAsAttach);
@@ -397,8 +409,7 @@ public class Message {
             }
 
             // Saving the photo
-            String saveMessagesDocQuery = "https://api.vk.com/method/docs.save?access_token=" + accessToken + "&v=5.67&file=" + file;
-            JSONObject saveMessagesDocResponse = new JSONObject(Connection.getRequestResponse(saveMessagesDocQuery));
+            JSONObject saveMessagesDocResponse = api.callSync("docs.save", _client, "file", file);
             String docAsAttach = saveMessagesDocResponse.has("response") ? "doc" + saveMessagesDocResponse.getJSONArray("response").getJSONObject(0).getInt("owner_id") + "_" + saveMessagesDocResponse.getJSONArray("response").getJSONObject(0).getInt("id") : "";
 
             this.attachments.add(docAsAttach);
