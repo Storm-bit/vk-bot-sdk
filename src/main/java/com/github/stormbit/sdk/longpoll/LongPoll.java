@@ -68,7 +68,7 @@ public class LongPoll {
         boolean dataSetted = setData(null, null, null, null, null);
 
         while (!dataSetted) {
-            LOG.error("Some error occured when trying to get longpoll settings, aborting. Trying again in 1 sec.");
+            LOG.error("Some error occurred when trying to get longpoll settings, aborting. Trying again in 1 sec.");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
@@ -176,7 +176,7 @@ public class LongPoll {
         GetLongPollServerResponse serverResponse = getLongPollServer();
 
         if (serverResponse == null) {
-            LOG.error("Some error occured, bad response returned from getting LongPoll server settings (server, key, ts, pts).");
+            LOG.error("Some error occurred, bad response returned from getting LongPoll server settings (server, key, ts, pts).");
             return false;
         }
 
@@ -184,6 +184,8 @@ public class LongPoll {
         this.key = serverResponse.getKey();
         this.ts = serverResponse.getTs();
         this.pts = serverResponse.getPts();
+
+        Utils.longpollServer = "https://" + server + "?act=a_check&key=" + key + "&ts=" + ts + "&wait=" + wait + "&mode=" + mode + "&version=" + version + "&msgs_limit=100000";
 
         return true;
     }
@@ -228,8 +230,6 @@ public class LongPoll {
 
         LOG.info("GetLongPollServerResponse: \n{}\n", response);
 
-        Utils.longpollServer = response.getString("server");
-
         return new GetLongPollServerResponse(
                 response.getString("key"),
                 response.getString("server"),
@@ -258,7 +258,7 @@ public class LongPoll {
                 responseString = Connection.getRequestResponse(query);
                 response = new JSONObject(responseString);
             } catch (JSONException ignored) {
-                LOG.error("Some error occured, no updates got from longpoll server: {}", responseString);
+                LOG.error("Some error occurred, no updates got from longpoll server: {}", responseString);
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored1) {
