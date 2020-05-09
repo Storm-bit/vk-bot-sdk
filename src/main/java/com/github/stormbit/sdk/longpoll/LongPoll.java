@@ -228,6 +228,8 @@ public class LongPoll {
 
         LOG.info("GetLongPollServerResponse: \n{}\n", response);
 
+        Utils.longpollServer = response.getString("server");
+
         return new GetLongPollServerResponse(
                 response.getString("key"),
                 response.getString("server"),

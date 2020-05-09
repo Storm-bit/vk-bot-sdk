@@ -30,6 +30,7 @@ public class Utils {
     public static JSONObject _hashes = new JSONObject();
     public static final String URL = "https://vk.com/dev";
     public static final double version = 5.103;
+    public static String longpollServer = "";
 
     /**
      * Analog of JS setTimeout
