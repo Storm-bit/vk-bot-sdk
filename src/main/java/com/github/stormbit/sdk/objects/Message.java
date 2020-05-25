@@ -1106,12 +1106,12 @@ public class Message {
 
         String currentBiggestPhoto;
 
-        var sizes = new HashMap<Integer, String>();
+        Map<Integer, String> sizes = new HashMap<>();
 
-        for (var object : photos) {
+        for (Object object : photos) {
             if (object instanceof JSONObject) {
-                var width = ((JSONObject) object).getInt("width");
-                var url = ((JSONObject) object).getString("url");
+                int width = ((JSONObject) object).getInt("width");
+                String url = ((JSONObject) object).getString("url");
                 sizes.put(width, url);
             }
         }
