@@ -18,9 +18,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
@@ -1106,23 +1104,19 @@ public class Message {
      */
     public String getBiggestPhotoUrl(JSONArray photos) {
 
-        String currentBiggestPhoto = null;
+        String currentBiggestPhoto;
 
-        for (int i = 0; i < photos.length(); i++) {
-            JSONObject photo = photos.getJSONObject(i);
-            int width = photo.getInt("width");
+        var sizes = new HashMap<Integer, String>();
 
-            if (width == 1280)
-                currentBiggestPhoto = photo.getString("url");
-            else if (width == 807)
-                currentBiggestPhoto = photo.getString("url");
-            else if (width == 604)
-                currentBiggestPhoto = photo.getString("url");
-            else if (width == 130)
-                currentBiggestPhoto = photo.getString("url");
-            else if (width == 75)
-                currentBiggestPhoto = photo.getString("url");
+        for (var object : photos) {
+            if (object instanceof JSONObject) {
+                var width = ((JSONObject) object).getInt("width");
+                var url = ((JSONObject) object).getString("url");
+                sizes.put(width, url);
+            }
         }
+
+        currentBiggestPhoto = sizes.get(Collections.max(sizes.keySet()));
 
         return currentBiggestPhoto;
     }
