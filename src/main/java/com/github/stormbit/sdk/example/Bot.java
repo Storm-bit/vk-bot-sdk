@@ -8,14 +8,13 @@ import org.apache.log4j.PropertyConfigurator;
 public class Bot {
     private static final String login = "login";
     private static final String password = "password";
-    private static final int id = 10000000;
 
     public static void main(String[] args) {
         // Logging
         String log4jConfPath = "log4j.properties";
         PropertyConfigurator.configure(log4jConfPath);
 
-        User user = new User(login, password, id);
+        User user = new User(login, password);
 
         new Message()
                 .from(user)
