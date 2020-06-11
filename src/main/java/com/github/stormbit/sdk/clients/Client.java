@@ -7,6 +7,7 @@ import com.github.stormbit.sdk.callbacks.CallbackTriple;
 import com.github.stormbit.sdk.longpoll.LongPoll;
 import com.github.stormbit.sdk.objects.Chat;
 import com.github.stormbit.sdk.objects.Message;
+import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.vkapi.API;
 import com.github.stormbit.sdk.utils.vkapi.apis.API1;
 import com.github.stormbit.sdk.utils.vkapi.Auth;
@@ -49,12 +50,11 @@ public abstract class Client {
     /**
      * @param login        Login of your VK bot account
      * @param password     Password of your VK bot account
-     * @param id           User or group id
      */
-    Client(String login, String password, int id) {
+    Client(String login, String password) {
         _auth = new Auth(login, password).auth();
-        this.id = id;
         api = new API1(this);
+        this.id = Utils.getId(this);
 
         this.longPoll = new LongPoll(this);
     }
@@ -63,14 +63,6 @@ public abstract class Client {
         _auth = new Auth();
         token = access_token;
         this.id = id;
-        api = new API2(this);
-
-        this.longPoll = new LongPoll(this);
-    }
-
-    Client(String access_token) {
-        _auth = new Auth();
-        token = access_token;
         api = new API2(this);
 
         this.longPoll = new LongPoll(this);

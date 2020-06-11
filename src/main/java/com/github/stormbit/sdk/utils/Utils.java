@@ -1,5 +1,6 @@
 package com.github.stormbit.sdk.utils;
 
+import com.github.stormbit.sdk.clients.Client;
 import com.github.stormbit.sdk.utils.vkapi.Auth;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -357,5 +358,9 @@ public class Utils {
             return matcher.group(group);
         }
         return null;
+    }
+
+    public static int getId(Client client) {
+        return client.api().callSync("users.get").getJSONObject("response").getInt("id");
     }
 }

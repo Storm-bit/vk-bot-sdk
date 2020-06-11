@@ -27,40 +27,38 @@ public class API1 extends API {
         try {
             JSONObject parameters = new JSONObject();
 
-            if (params != null) {
-                boolean good = false;
+            boolean good = false;
 
-                // Work with map
-                if (params instanceof Map) {
+            // Work with map
+            if (params instanceof Map) {
 
-                    parameters = new JSONObject((Map) params);
+                parameters = new JSONObject((Map) params);
+                good = true;
+            }
+
+            // with JO
+            if (params instanceof JSONObject) {
+                parameters = (JSONObject) params;
+                good = true;
+            }
+
+            // or string
+            if (params instanceof String) {
+                String s = params.toString();
+                if (s.startsWith("{")) {
+                    parameters = new JSONObject(s);
                     good = true;
-                }
-
-                // with JO
-                if (params instanceof JSONObject) {
-                    parameters = (JSONObject) params;
-                    good = true;
-                }
-
-                // or string
-                if (params instanceof String) {
-                    String s = params.toString();
-                    if (s.startsWith("{")) {
-                        parameters = new JSONObject(s);
+                } else {
+                    if (s.contains("&") && s.contains("=")) {
+                        parameters = Utils.explodeQuery(s);
                         good = true;
-                    } else {
-                        if (s.contains("&") && s.contains("=")) {
-                            parameters = Utils.explodeQuery(s);
-                            good = true;
-                        }
                     }
                 }
+            }
 
-                if (good) {
-                    CallAsync call = new CallAsync(method, parameters, callback);
-                    executor.execute(call);
-                }
+            if (good) {
+                CallAsync call = new CallAsync(method, parameters, callback);
+                executor.execute(call);
             }
         } catch (Exception e) {
             LOG.error("Some error occurred when calling VK API method {} with params {}, error is {}", method, params.toString(), e.getMessage());

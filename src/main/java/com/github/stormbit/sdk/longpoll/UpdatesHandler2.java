@@ -49,6 +49,15 @@ public class UpdatesHandler2 extends UpdatesHandler {
                 break;
             }
 
+            // Handling update (user started typing)
+            case MESSAGE_TYPING_STATE: {
+                handleTypingUpdate(object);
+
+                // handle every
+                handleEveryLongPollUpdate(currentUpdate);
+                break;
+            }
+
             // Handling other
             default: {
                 handleEveryLongPollUpdate(currentUpdate);
@@ -327,6 +336,17 @@ public class UpdatesHandler2 extends UpdatesHandler {
             callbacks.get("OnEveryMessageCallback").onResult(message);
 
             handleSendTyping(message);
+        }
+    }
+
+    /**
+     * Handle dialog with typing user
+     */
+    @SuppressWarnings("unchecked")
+    private void handleTypingUpdate(JSONObject updateObject) {
+
+        if (callbacks.containsKey("OnTypingCallback")) {
+            callbacks.get("OnTypingCallback").onResult(updateObject.getString("from_id"));
         }
     }
 
