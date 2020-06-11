@@ -8,7 +8,9 @@ import com.github.stormbit.sdk.longpoll.LongPoll;
 import com.github.stormbit.sdk.objects.Chat;
 import com.github.stormbit.sdk.objects.Message;
 import com.github.stormbit.sdk.utils.vkapi.API;
+import com.github.stormbit.sdk.utils.vkapi.apis.API1;
 import com.github.stormbit.sdk.utils.vkapi.Auth;
+import com.github.stormbit.sdk.utils.vkapi.apis.API2;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -17,7 +19,7 @@ import java.util.concurrent.*;
 
 /**
  * Created by PeterSamokhin on 28/09/2017 21:59
- * Updated by RomanBoycov on 03/04/2020 19:40
+ * Updated by Storm-bit on 03/04/2020 19:40
  * Main client class, that contains all necessary methods and fields
  * for base work with VK and longpoll server
  */
@@ -36,27 +38,42 @@ public abstract class Client {
     private Integer id;
     private static API api;
     private LongPoll longPoll;
-    private Auth _auth;
+    private final Auth _auth;
+    private String access_token;
+    public String token;
 
     public CopyOnWriteArrayList<Command> commands = new CopyOnWriteArrayList<>();
-    private ConcurrentHashMap<Integer, Chat> chats = new ConcurrentHashMap<>();
-
+    private final ConcurrentHashMap<Integer, Chat> chats = new ConcurrentHashMap<>();
 
     /**
-     * Default constructor
      * @param login        Login of your VK bot account
      * @param password     Password of your VK bot account
      * @param id           User or group id
      */
     Client(String login, String password, int id) {
-        _auth = new Auth(login, password);
-        _auth.auth();
+        _auth = new Auth(login, password).auth();
         this.id = id;
-        api = new API(this);
+        api = new API1(this);
 
         this.longPoll = new LongPoll(this);
     }
 
+    Client(String access_token, Integer id) {
+        _auth = new Auth();
+        token = access_token;
+        this.id = id;
+        api = new API2(this);
+
+        this.longPoll = new LongPoll(this);
+    }
+
+    Client(String access_token) {
+        _auth = new Auth();
+        token = access_token;
+        api = new API2(this);
+
+        this.longPoll = new LongPoll(this);
+    }
 
     public void setLongPoll(LongPoll LP) {
 
@@ -81,7 +98,7 @@ public abstract class Client {
         return longPoll;
     }
 
-    public Auth get_auth() {
+    public Auth auth() {
         return _auth;
     }
 
@@ -235,9 +252,9 @@ public abstract class Client {
     /**
      * Command object
      */
-    public class Command {
-        private Object[] commands;
-        private Callback<Message> callback;
+    public static class Command {
+        private final Object[] commands;
+        private final Callback<Message> callback;
 
         public Command(Object[] commands, Callback<Message> callback) {
             this.commands = commands;
@@ -271,6 +288,10 @@ public abstract class Client {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getToken() {
+        return this.token;
     }
 
     @Override

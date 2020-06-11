@@ -1,18 +1,14 @@
 package com.github.stormbit.sdk.utils.vkapi;
 
-import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.vkapi.calls.Call;
 import com.github.stormbit.sdk.utils.vkapi.calls.CallAsync;
 import com.github.stormbit.sdk.utils.vkapi.calls.CallSync;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.stormbit.sdk.clients.Client;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 /**
  * Created by PeterSamokhin on 28/09/2017 21:59
@@ -23,9 +19,9 @@ import java.util.stream.IntStream;
  * <p>
  * See more: <a href="https://vk.com/dev/execute">link</a>
  */
-public class Executor {
+public abstract class Executor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Executor.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(Executor.class);
 
     public static boolean LOG_REQUESTS = false;
 
@@ -38,9 +34,9 @@ public class Executor {
     /**
      * Queue of requests
      */
-    private volatile List<CallAsync> queue = new ArrayList<>();
+    protected volatile List<CallAsync> queue = new ArrayList<>();
 
-    private final Auth _auth;
+    protected final Auth _auth;
 
 
     public Executor(Auth auth) {
@@ -53,76 +49,7 @@ public class Executor {
      * Method that makes 'execute' requests
      * with first 25 calls from queue.
      */
-    private void executing() {
-
-        List<CallAsync> tmpQueue = new ArrayList<>();
-        int count = 0;
-
-        for (Iterator<CallAsync> iterator = queue.iterator(); iterator.hasNext() && count < 25; count++) {
-            tmpQueue.add(iterator.next());
-        }
-
-        if (!tmpQueue.isEmpty()) {
-            for (CallAsync item : tmpQueue) {
-                String method = item.getMethodName();
-                JSONObject params = item.getParams();
-
-                if (!Utils._hashes.has(method)) {
-                    Utils.get_hash(_auth, method);
-                }
-
-                queue.removeAll(tmpQueue);
-
-                JSONObject data = new JSONObject();
-                data.put("act", "a_run_method");
-                data.put("al", 1);
-                data.put("hash", Utils._hashes.get(method));
-                data.put("method", method);
-                data.put("param_v", Utils.version);
-
-                for (String key : params.keySet()) {
-                    data.put("param_" + key, params.get(key));
-                }
-
-                Map<String, Object> prms = new HashMap<>();
-                for (String key : data.keySet()) {
-                    prms.put(key, data.get(key));
-                }
-
-                // Execute
-                if (count > 0) {
-
-                    String responseString = _auth.session.post(Utils.URL)
-                            .body(prms)
-                            .send().readToText().replaceAll("[<!>-]", "");
-
-                    if (LOG_REQUESTS) {
-                        LOG.error("New executing request response: {}", responseString);
-                    }
-
-                    JSONObject response;
-
-                    try {
-                        response = new JSONObject(new JSONObject(responseString).getJSONArray("payload").getJSONArray(1).getString(0));
-                    } catch (JSONException e) {
-                        tmpQueue.forEach(call -> call.getCallback().onResult("false"));
-                        LOG.error("Bad response from executing: {}, params: {}", responseString, data.toString());
-                        return;
-                    }
-
-                    if (!response.has("response")) {
-                        LOG.error("No 'response' object when executing code, VK response: {}", response);
-                        tmpQueue.forEach(call -> call.getCallback().onResult("false"));
-                        return;
-                    }
-
-                    Object responses = response.get("response");
-
-                    IntStream.range(0, count).forEachOrdered(i -> tmpQueue.get(i).getCallback().onResult(responses));
-                }
-            }
-        }
-    }
+    protected abstract void executing();
 
     /**
      * Method that makes string in json format from call object.

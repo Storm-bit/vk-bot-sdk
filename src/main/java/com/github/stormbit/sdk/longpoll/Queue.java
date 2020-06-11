@@ -1,6 +1,7 @@
 package com.github.stormbit.sdk.longpoll;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -12,7 +13,8 @@ class Queue {
     /**
      * List of updates that we need to handle
      */
-    volatile CopyOnWriteArrayList<JSONArray> updates = new CopyOnWriteArrayList<>();
+    protected volatile CopyOnWriteArrayList<JSONArray> updates = new CopyOnWriteArrayList<>();
+    protected volatile CopyOnWriteArrayList<JSONObject> updates2 = new CopyOnWriteArrayList<>();
 
     /**
      * We add all of updates from longpoll server
@@ -20,8 +22,14 @@ class Queue {
      *
      * @param elements Array of updates
      */
-    void putAll(JSONArray elements) {
-        elements.forEach(item -> updates.add((JSONArray) item));
+    protected void putAll(JSONArray elements) {
+        elements.forEach(item -> {
+            if (item instanceof JSONArray) {
+                updates.add((JSONArray) item);
+            } else {
+                updates2.add((JSONObject) item);
+            }
+        });
     }
 
     /**
@@ -29,12 +37,21 @@ class Queue {
      *
      * @return First element of list, and then remove it
      */
-    JSONArray shift() {
+    protected JSONArray shift() {
         if (this.updates.size() > 0) {
             JSONArray answer = this.updates.get(0);
             this.updates.remove(0);
             return answer;
         }
         return new JSONArray();
+    }
+
+    protected JSONObject shift2() {
+        if (this.updates2.size() > 0) {
+            JSONObject answer = this.updates2.get(0);
+            this.updates2.remove(0);
+            return answer;
+        }
+        return new JSONObject();
     }
 }

@@ -29,7 +29,7 @@ public class Message {
 
     private static final Logger LOG = LoggerFactory.getLogger(Message.class);
 
-    private Integer messageId, flags, peerId, timestamp, randomId, stickerId, chatId, chatIdLong;
+    private Integer messageId, peerId, timestamp, randomId, stickerId, chatId, chatIdLong;
     private String text, title;
     private API api;
     private Client _client;
@@ -59,17 +59,15 @@ public class Message {
      * Constructor for received message
      * @param client client
      * @param messageId message id
-     * @param flags flags
      * @param peerId peer id
      * @param timestamp timestamp
      * @param text message text
      * @param attachments message attachments
      * @param randomId random id
      */
-    public Message(Client client, Integer messageId, Integer flags, Integer peerId, Integer timestamp, String text, JSONObject attachments, Integer randomId) {
+    public Message(Client client, Integer messageId, Integer peerId, Integer timestamp, String text, JSONObject attachments, Integer randomId) {
 
         setMessageId(messageId);
-        setFlags(flags);
         setPeerId(peerId);
         setTimestamp(timestamp);
         setText(text);
@@ -794,7 +792,6 @@ public class Message {
         title = (title != null && title.length() > 0) ? title : "";
 
         randomId = randomId != null && randomId > 0 ? randomId : 0;
-        peerId = peerId != null ? peerId : -142409596;
         attachments = attachments != null && attachments.size() > 0 ? attachments : new CopyOnWriteArrayList<>();
         forwardedMessages = forwardedMessages != null && forwardedMessages.size() > 0 ? forwardedMessages : new CopyOnWriteArrayList<>();
         stickerId = stickerId != null && stickerId > 0 ? stickerId : 0;
@@ -965,7 +962,7 @@ public class Message {
 
         int photo = 0, video = 0, audio = 0, doc = 0, wall = 0, link = 0;
 
-        Map<String, Integer> answer = new HashMap<String, Integer>() {{
+        Map<String, Integer> answer = new HashMap<>() {{
             put("photo", 0);
             put("video", 0);
             put("audio", 0);
@@ -1040,10 +1037,6 @@ public class Message {
         return messageId;
     }
 
-    public Integer getFlags() {
-        return flags;
-    }
-
     public Integer authorId() {
         return peerId;
     }
@@ -1076,10 +1069,6 @@ public class Message {
 
     private void setMessageId(Integer messageId) {
         this.messageId = messageId;
-    }
-
-    private void setFlags(Integer flags) {
-        this.flags = flags;
     }
 
     private void setPeerId(Integer peerId) {
@@ -1181,7 +1170,6 @@ public class Message {
     public String toString() {
         return '{' +
                 "\"message_id\":" + messageId +
-                ",\"flags\":" + flags +
                 ",\"peer_id\":" + peerId +
                 ",\"timestamp\":" + timestamp +
                 ",\"random_id\":" + randomId +

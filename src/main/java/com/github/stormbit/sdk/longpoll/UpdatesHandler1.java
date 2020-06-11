@@ -2,61 +2,30 @@ package com.github.stormbit.sdk.longpoll;
 
 import com.github.stormbit.sdk.callbacks.*;
 import com.github.stormbit.sdk.clients.Client;
+import com.github.stormbit.sdk.longpoll.UpdatesHandler;
 import com.github.stormbit.sdk.objects.Chat;
 import com.github.stormbit.sdk.objects.Message;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import static com.github.stormbit.sdk.clients.Client.scheduler;
 import static com.github.stormbit.sdk.clients.Client.service;
 
 /**
- * Created by PeterSamokhin on 28/09/2017 21:59
- * Updated by RomanBoycov on 03/04/2020 19:40
+ * Created by Storm-bit on 03/04/2020 19:40
  *
  * Class for handling all updates in other thread
  */
-public class UpdatesHandler extends Thread {
-
-    private volatile Queue queue = new Queue();
-
-    volatile boolean sendTyping = false;
-
-    /**
-     * Maps with callbacks
-     */
-    private ConcurrentHashMap<String, Callback> callbacks = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, AbstractCallback> chatCallbacks = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, AbstractCallback> abstractCallbacks = new ConcurrentHashMap<>();
+public class UpdatesHandler1 extends UpdatesHandler {
 
     /**
      * Client with access_token
      */
-    private Client client;
-
-    UpdatesHandler(Client client) {
-        this.client = client;
+    UpdatesHandler1(Client client) {
+        super(client);
     }
 
     @Override
-    public void run() {
-        scheduler.scheduleWithFixedDelay(this::handleCurrentUpdate, 0, 1, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * Handle the array of updates
-     */
-    void handle(JSONArray updates) {
-        this.queue.putAll(updates);
-    }
-
-    /**
-     * Handle one event from longpoll server
-     */
-    private void handleCurrentUpdate() {
+    protected void handleCurrentUpdate() {
 
         JSONArray currentUpdate;
 
@@ -218,8 +187,7 @@ public class UpdatesHandler extends Thread {
         boolean messageIsAlreadyHandled = false;
 
         // All necessary data
-        Integer messageId = updateObject.getInt(1),
-                messageFlags = updateObject.getInt(2),
+        int messageId = updateObject.getInt(1),
                 peerId = updateObject.getInt(3),
                 chatId = 0,
                 timestamp = updateObject.getInt(4);
@@ -228,7 +196,7 @@ public class UpdatesHandler extends Thread {
 
         JSONObject attachments = (updateObject.length() > 6 ? (updateObject.get(6).toString().startsWith("{") ? new JSONObject(updateObject.get(6).toString()) : null) : null);
 
-        Integer randomId = updateObject.length() > 7 ? updateObject.getInt(7) : null;
+        Integer randomId = updateObject.length() > 7 ? updateObject.getInt(8) : null;
 
         // Check for chat
         if (peerId > Chat.CHAT_PREFIX) {
@@ -241,7 +209,6 @@ public class UpdatesHandler extends Thread {
         Message message = new Message(
                 this.client,
                 messageId,
-                messageFlags,
                 peerId,
                 timestamp,
                 messageText,
@@ -421,55 +388,6 @@ public class UpdatesHandler extends Thread {
         if (callbacks.containsKey("OnTypingCallback")) {
             callbacks.get("OnTypingCallback").onResult(updateObject.getInt(1));
         }
-    }
-
-    /**
-     * Add callback to the map
-     *
-     * @param name     Callback name
-     * @param callback Callback
-     */
-    void registerCallback(String name, Callback callback) {
-        this.callbacks.put(name, callback);
-    }
-
-    void registerAbstractCallback(String name, AbstractCallback callback) {
-        this.abstractCallbacks.put(name, callback);
-    }
-
-    /**
-     * Add callback to the map
-     *
-     * @param name     Callback name
-     * @param callback Callback
-     */
-    void registerChatCallback(String name, AbstractCallback callback) {
-        this.chatCallbacks.put(name, callback);
-    }
-
-    /**
-     * Returns count of callbacks
-     */
-    int callbacksCount() {
-        return this.callbacks.size();
-    }
-
-    int abstractCallbacksCount() {
-        return this.abstractCallbacks.size();
-    }
-
-    /**
-     * Returns count of callbacks
-     */
-    int chatCallbacksCount() {
-        return this.chatCallbacks.size();
-    }
-
-    /**
-     * Returns count of commands
-     */
-    int commandsCount() {
-        return this.client.commands.size();
     }
 
     /**

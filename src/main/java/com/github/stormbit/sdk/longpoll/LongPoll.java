@@ -2,7 +2,6 @@ package com.github.stormbit.sdk.longpoll;
 
 import com.github.stormbit.sdk.callbacks.AbstractCallback;
 import com.github.stormbit.sdk.callbacks.Callback;
-import com.github.stormbit.sdk.callbacks.CallbackDouble;
 import com.github.stormbit.sdk.clients.Client;
 import com.github.stormbit.sdk.longpoll.responses.GetLongPollServerResponse;
 import com.github.stormbit.sdk.utils.Utils;
@@ -39,14 +38,14 @@ public class LongPoll {
      */
     private Integer mode = 162;
 
-    private Integer version = 2;
+    private Integer version = 3;
     private Integer need_pts = 1;
     private Double API = 5.101;
 
     private volatile boolean longpollIsOn = false;
 
-    private UpdatesHandler updatesHandler;
-    private Client client;
+    private final UpdatesHandler updatesHandler;
+    private final Client client;
 
     /**
      * If true, all updates from longpoll server
@@ -60,8 +59,11 @@ public class LongPoll {
      * @param client client with your access token key, more: <a href="https://vk.com/dev/access_token">link</a>
      */
     public LongPoll(Client client) {
-
-        this.updatesHandler = new UpdatesHandler(client);
+        if (client.token == null) {
+            this.updatesHandler = new UpdatesHandler1(client);
+        } else {
+            this.updatesHandler = new UpdatesHandler2(client);
+        }
         this.updatesHandler.start();
         this.client = client;
 
@@ -95,7 +97,11 @@ public class LongPoll {
      */
     public LongPoll(Client client, Integer need_pts, Integer version, Double API, Integer wait, Integer mode) {
 
-        this.updatesHandler = new UpdatesHandler(client);
+        if (client.token == null) {
+            this.updatesHandler = new UpdatesHandler1(client);
+        } else {
+            this.updatesHandler = new UpdatesHandler2(client);
+        }
         this.updatesHandler.start();
         this.client = client;
 
@@ -173,19 +179,30 @@ public class LongPoll {
         this.wait = wait == null ? this.wait : wait;
         this.mode = mode == null ? this.mode : mode;
 
-        GetLongPollServerResponse serverResponse = getLongPollServer();
+        GetLongPollServerResponse serverResponse;
+
+        if (client.token == null) {
+            serverResponse = getLongPollServer();
+        } else {
+            serverResponse = getLongPollServerGroup();
+        }
 
         if (serverResponse == null) {
             LOG.error("Some error occurred, bad response returned from getting LongPoll server settings (server, key, ts, pts).");
             return false;
         }
 
-        this.server = serverResponse.getServer();
+        String serv = serverResponse.getServer();
+
+        if (!serv.startsWith("https://")) {
+            serv = "https://" + serv;
+        }
+        this.server = serv;
         this.key = serverResponse.getKey();
         this.ts = serverResponse.getTs();
         this.pts = serverResponse.getPts();
 
-        Utils.longpollServer = "https://" + server + "?act=a_check&key=" + key + "&ts=" + ts + "&wait=" + wait + "&mode=" + mode + "&version=" + version + "&msgs_limit=100000";
+        Utils.longpollServer = server + "?act=a_check&key=" + key + "&ts=" + ts + "&wait=" + wait + "&mode=" + mode + "&version=" + version + "&msgs_limit=100000";
 
         return true;
     }
@@ -194,7 +211,7 @@ public class LongPoll {
         String method = "messages.getLongPollServer";
 
         if (!Utils._hashes.has(method)) {
-            Utils.get_hash(client.get_auth(), method);
+            Utils.get_hash(client.auth(), method);
         }
 
         JSONObject data_ = new JSONObject();
@@ -212,7 +229,7 @@ public class LongPoll {
             prms.put(key, data_.get(key));
         }
 
-        JSONObject result = client.api().callSync(method, client, prms);
+        JSONObject result = client.api().callSync(method, prms);
 
         JSONObject response;
 
@@ -238,6 +255,41 @@ public class LongPoll {
         );
     }
 
+    private GetLongPollServerResponse getLongPollServerGroup() {
+        String method = "groups.getLongPollServer";
+
+        JSONObject params = new JSONObject();
+        params.put("group_id", client.getId());
+
+        Map<String, Object> prms = new HashMap<>();
+        for (String key : params.keySet()) {
+            prms.put(key, params.get(key));
+        }
+
+        JSONObject result = client.api().callSync(method, params);
+
+        JSONObject response;
+
+        if (!result.has("response") || !result.getJSONObject("response").has("key") || !result.getJSONObject("response").has("server") || !result.getJSONObject("response").has("ts")) {
+            LOG.error("Bad response of getting longpoll server!\nQuery: {}\n Response: {}", params.toString(), result);
+            return null;
+        }
+
+        try {
+            response = result.getJSONObject("response");
+        } catch (JSONException e) {
+            LOG.error("Bad response of getting longpoll server.");
+            return null;
+        }
+
+        LOG.info("GetLongPollServerResponse: \n{}\n", response);
+
+        return new GetLongPollServerResponse(
+                response.getString("key"),
+                response.getString("server"),
+                response.getInt("ts")
+        );
+    }
 
     /**
      * Listening to events from VK longpoll server
@@ -254,9 +306,18 @@ public class LongPoll {
             String responseString = "{}";
 
             try {
-                String query = "https://" + server + "?act=a_check&key=" + key + "&ts=" + ts + "&wait=" + wait + "&mode=" + mode + "&version=" + version + "&msgs_limit=100000";
-                responseString = Connection.getRequestResponse(query);
+                Map<String, Object> values = new HashMap<>();
+                values.put("act", "a_check");
+                values.put("key", key);
+                values.put("ts", ts);
+                values.put("wait", wait);
+
+                String url = server + "?act=a_check&key=" + key + "&ts=" + ts + "&wait=" + wait + "&mode=" + mode + "&version=" + version + "&msgs_limit=100000";
+
+                responseString = Connection.getRequestResponse(url);
+
                 response = new JSONObject(responseString);
+
             } catch (JSONException ignored) {
                 LOG.error("Some error occurred, no updates got from longpoll server: {}", responseString);
                 try {
@@ -276,25 +337,15 @@ public class LongPoll {
 
                 LOG.error("Response of VK LongPoll fallen with error code {}", code);
 
-                switch (code) {
-
-                    default: {
-
-                        if (response.has("ts")) {
-                            ts = response.getInt("ts");
-                        }
-
-                        setData(null, null, null, null, null);
-                        break;
+                if (code == 4) {
+                    version = response.getInt("max_version");
+                } else {
+                    if (response.has("ts")) {
+                        ts = response.getInt("ts");
                     }
 
-                    case 4: {
-
-                        version = response.getInt("max_version");
-                        setData(null, null, null, null, null);
-                        break;
-                    }
                 }
+                setData(null, null, null, null, null);
             } else {
 
                 if (response.has("ts"))

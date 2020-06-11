@@ -2,8 +2,6 @@ package com.github.stormbit.sdk.utils.vkapi;
 
 import com.github.stormbit.sdk.callbacks.Callback;
 import com.github.stormbit.sdk.clients.Client;
-import com.github.stormbit.sdk.clients.User;
-import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.vkapi.calls.CallAsync;
 import com.github.stormbit.sdk.utils.vkapi.calls.CallSync;
 import org.json.JSONArray;
@@ -13,45 +11,30 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by PeterSamokhin on 28/09/2017 21:59
- * Updated by RomanBoycov on 03/04/2020 19:40
+ * Updated by Storm-bit on 03/04/2020 19:40
  *
  * Simple interacting with VK API
  */
-public class API {
+public abstract class API {
 
-    private static final Logger LOG = LoggerFactory.getLogger(API.class);
+    protected final Logger LOG = LoggerFactory.getLogger(API.class);
 
-    private static Executor executor;
+    protected Executor executor;
+    protected Client client;
 
-    private static boolean executionStarted = false;
+    protected boolean executionStarted = false;
 
     /**
      * Get the token from client
-     * todo Not all methods available with group tokens, and few methods available without token
-     * todo Need to make client with both tokens, or any another conclusion
-     *
      * @param client Client
      */
-    public API(Client client) {
+    public API(Client client, Executor executor) {
+        this.client = client;
+        this.executor = executor;
         if (!executionStarted) {
-            executor = new Executor(client.get_auth());
-            executionStarted = true;
-        }
-    }
-
-    /**
-     * todo Not all methods available with group tokens, and few methods available without token
-     * todo Need to make client with both tokens, or any another conclusion
-     * @param auth Auth object
-     */
-    public API(Auth auth) {
-        if (!executionStarted) {
-            executor = new Executor(auth);
             executionStarted = true;
         }
     }
@@ -63,50 +46,7 @@ public class API {
      * @param params   Params as string, JSONObject or Map
      * @param callback Callback to return the response
      */
-    public void call(String method, Object params, Callback<Object> callback) {
-
-        try {
-            JSONObject parameters = new JSONObject();
-
-            if (params != null) {
-                boolean good = false;
-
-                // Work with map
-                if (params instanceof Map) {
-
-                    parameters = new JSONObject((Map) params);
-                    good = true;
-                }
-
-                // with JO
-                if (params instanceof JSONObject) {
-                    parameters = (JSONObject) params;
-                    good = true;
-                }
-
-                // or string
-                if (params instanceof String) {
-                    String s = params.toString();
-                    if (s.startsWith("{")) {
-                        parameters = new JSONObject(s);
-                        good = true;
-                    } else {
-                        if (s.contains("&") && s.contains("=")) {
-                            parameters = Utils.explodeQuery(s);
-                            good = true;
-                        }
-                    }
-                }
-
-                if (good) {
-                    CallAsync call = new CallAsync(method, parameters, callback);
-                    executor.execute(call);
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("Some error occurred when calling VK API method {} with params {}, error is {}", method, params.toString(), e.getMessage());
-        }
-    }
+    public abstract void call(String method, Object params, Callback<Object> callback);
 
     /**
      * Call to VK API
@@ -115,43 +55,17 @@ public class API {
      * @param method   Method name
      * @param params   Floating count of params
      */
-    public void call(Callback<Object> callback, String method, Object... params) {
-
-        try {
-            if (params != null) {
-
-                if (params.length == 1) {
-                    this.call(method, params[0], callback);
-                }
-
-                if (params.length > 1) {
-
-                    if (params.length % 2 == 0) {
-                        Map<String, Object> map = new HashMap<>();
-
-                        for (int i = 0; i < params.length - 1; i += 2) {
-                            map.put(params[i].toString(), params[i + 1]);
-                        }
-
-                        this.call(method, map, callback);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            LOG.error(String.format("Some error occurred when calling VK API: {%s}", e));
-        }
-    }
+    public abstract void call(Callback<Object> callback, String method, Object... params);
 
     /**
      * Call to 'execute' method, because can not call API.execute inside execute.
      * More: <a href="https://vk.com/dev/execute">link</a>;
      * @param code code
-     * @param user User object
      * @return JSONObject response of VK answer
      */
-    public JSONObject execute(String code, User user) {
+    public JSONObject execute(String code) {
 
-        return new JSONObject(callSync("execute", user, new JSONObject().put("code", code)));
+        return new JSONObject(callSync("execute", new JSONObject().put("code", code)));
     }
 
     /**
@@ -178,11 +92,10 @@ public class API {
      * Execute float count of calls, up to 25
      *
      * @param calls single call to VK API or calls separated by comma.
-     * @param user User object
      * @return JSONArray with responses of calls
      * @see CallSync
      */
-    public JSONArray execute(User user, CallSync... calls) {
+    public JSONArray execute(CallSync... calls) {
 
         StringBuilder code = new StringBuilder("return [");
 
@@ -197,7 +110,7 @@ public class API {
 
         JSONObject response = null;
         try {
-            response = new JSONObject(callSync("execute", user, new JSONObject().put("code", URLEncoder.encode(code.toString(), "UTF-8"))));
+            response = new JSONObject(callSync("execute", new JSONObject().put("code", URLEncoder.encode(code.toString(), "UTF-8"))));
         } catch (UnsupportedEncodingException ignored) {
         }
 
@@ -209,111 +122,17 @@ public class API {
      *
      * @param method Method name
      * @param params Params as string, JSONObject or Map
-     * @param user User object
      * @return JSONObject response of VK answer
      */
-    public JSONObject callSync(String method, Object params, Client user) {
-
-        try {
-            JSONObject parameters = new JSONObject();
-
-            if (params != null) {
-                boolean good = false;
-
-                // Work with map
-                if (params instanceof Map) {
-
-                    parameters = new JSONObject((Map) params);
-                    good = true;
-                }
-
-                // with JO
-                if (params instanceof JSONObject) {
-                    parameters = (JSONObject) params;
-                    good = true;
-                }
-
-                // or string
-                if (params instanceof String) {
-                    String s = params.toString();
-                    if (s.startsWith("{")) {
-                        parameters = new JSONObject(s);
-                        good = true;
-                    } else {
-                        if (s.contains("&") && s.contains("=")) {
-                            parameters = Utils.explodeQuery(s);
-                            good = true;
-                        }
-                    }
-                }
-
-                if (good) {
-
-                    if (!Utils._hashes.has(method)) {
-                        Utils.get_hash(user.get_auth(), method);
-                    }
-
-                    JSONObject data = new JSONObject();
-                    data.put("act", "a_run_method");
-                    data.put("al", 1);
-                    data.put("hash", Utils._hashes.get(method));
-                    data.put("method", method);
-                    data.put("param_v", Utils.version);
-
-                    for (String key : parameters.keySet()) {
-                        data.put("param_" + key, parameters.get(key));
-                    }
-
-                    Map<String, Object> prms = new HashMap<>();
-                    for (String key : data.keySet()) {
-                        prms.put(key, data.get(key));
-                    }
-
-                    String responseString = user.get_auth().session.post(Utils.URL)
-                            .body(prms)
-                            .send().readToText().replaceAll("[<!>-]", "");
-
-                    return new JSONObject(new JSONObject(responseString).getJSONArray("payload").getJSONArray(1).getString(0));
-                }
-
-            }
-        } catch (Exception e) {
-            LOG.error("Some error occurred when calling VK API: {}", e.getMessage());
-        }
-        return new JSONObject();
-    }
+    public abstract JSONObject callSync(String method, Object params);
 
     /**
      * Call to VK API
      *
      * @param method Method name
-     * @param user User object
      * @param params Floating count of params
      * @return JSONObject response of VK answer
      */
 
-    public JSONObject callSync(String method, Client user, Object... params) {
-
-        try {
-            if (params != null) {
-                if (params.length == 1) {
-                    return this.callSync(method, params[0], user);
-                }
-
-                if (params.length > 1 && params.length % 2 == 0) {
-                    Map<String, Object> map = new HashMap<>();
-
-                    for(int i = 0; i < params.length - 1; i += 2) {
-                        map.put(params[i].toString(), params[i + 1]);
-                    }
-
-                    return this.callSync(method, map, user);
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("Some error occurred when calling VK API: {}", e.getMessage());
-        }
-
-        return new JSONObject();
-    }
+    public abstract JSONObject callSync(String method, Object... params);
 }
