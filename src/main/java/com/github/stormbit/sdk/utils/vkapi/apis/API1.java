@@ -88,6 +88,7 @@ public class API1 extends API {
                     }
                 }
             }
+            this.call(method, new HashMap<String, Object>(), callback);
         } catch (Exception e) {
             LOG.error(String.format("Some error occurred when calling VK API: {%s}", e));
         }
@@ -183,7 +184,9 @@ public class API1 extends API {
 
                     return this.callSync(method, map);
                 }
+
             }
+            return this.callSync(method, new HashMap<String, Object>());
         } catch (Exception e) {
             LOG.error("Some error occurred when calling VK API: {}", e.getMessage());
         }
