@@ -73,7 +73,7 @@ public class Message {
         setText(text);
         setAttachments(attachments);
         setRandomId(randomId);
-        setTitle(attachments.has("title") ? attachments.getString("title") : " ... ");
+        setTitle(attachments != null && attachments.has("title") ? attachments.getString("title") : " ... ");
         _client = client;
         api = client.api();
     }

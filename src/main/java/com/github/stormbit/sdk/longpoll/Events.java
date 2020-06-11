@@ -3,6 +3,11 @@ package com.github.stormbit.sdk.longpoll;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Created by Storm-bit
+ *
+ * LongPoll events enum
+ */
 public enum Events {
     MESSAGE_NEW("message_new"),
     MESSAGE_REPLY("message_reply"),

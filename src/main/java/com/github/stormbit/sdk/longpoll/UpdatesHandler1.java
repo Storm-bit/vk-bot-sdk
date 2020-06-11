@@ -2,7 +2,6 @@ package com.github.stormbit.sdk.longpoll;
 
 import com.github.stormbit.sdk.callbacks.*;
 import com.github.stormbit.sdk.clients.Client;
-import com.github.stormbit.sdk.longpoll.UpdatesHandler;
 import com.github.stormbit.sdk.objects.Chat;
 import com.github.stormbit.sdk.objects.Message;
 import org.json.JSONArray;

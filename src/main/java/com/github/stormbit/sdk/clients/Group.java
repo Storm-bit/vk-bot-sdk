@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.net.URL;
 
 /**
+ * Created by Storm-bit
+ *
  * Group client, that contains important methods to work with groups
  */
 public class Group extends Client {

@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  * Created by PeterSamokhin on 28/09/2017 21:59
- * Updated by RomanBoycov on 03/04/2020 19:40
+ * Updated by Storm-bit on 03/04/2020 19:40
  *
  * Class for work with VK longpoll server
  * More: <a href="https://vk.com/dev/using_longpoll">link</a>
