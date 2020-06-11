@@ -233,7 +233,7 @@ public class Message {
         if (photoBytes != null) {
 
             // Getting of server for uploading the photo
-            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", _client, "peer_id", this.peerId);
+            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", "peer_id", this.peerId);
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
 
             // Some error
@@ -281,7 +281,7 @@ public class Message {
             }
 
             // Saving the photo
-            JSONObject saveMessagesPhotoResponse = api.callSync("photos.saveMessagesPhoto", _client, "server", server, "photo", photo_param, "hash", hash);
+            JSONObject saveMessagesPhotoResponse = api.callSync("photos.saveMessagesPhoto", "server", server, "photo", photo_param, "hash", hash);
 
             String photoAsAttach = saveMessagesPhotoResponse.has("response") ? "photo" + saveMessagesPhotoResponse.getJSONArray("response").getJSONObject(0).getInt("owner_id") + "_" + saveMessagesPhotoResponse.getJSONArray("response").getJSONObject(0).getInt("id") : "";
 
@@ -370,7 +370,7 @@ public class Message {
         if (docBytes != null) {
 
             // Getting of server for uploading the photo
-            JSONObject getUploadServerResponse = api.callSync("docs.getMessagesUploadServer", _client, "peer_id", this.peerId, "type", typeOfDoc.getType());
+            JSONObject getUploadServerResponse = api.callSync("docs.getMessagesUploadServer", "peer_id", this.peerId, "type", typeOfDoc.getType());
 
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
 
@@ -406,7 +406,7 @@ public class Message {
             }
 
             // Saving the photo
-            JSONObject saveMessagesDocResponse = api.callSync("docs.save", _client, "file", file);
+            JSONObject saveMessagesDocResponse = api.callSync("docs.save", "file", file);
             String docAsAttach = saveMessagesDocResponse.has("response") ? "doc" + saveMessagesDocResponse.getJSONArray("response").getJSONObject(0).getInt("owner_id") + "_" + saveMessagesDocResponse.getJSONArray("response").getJSONObject(0).getInt("id") : "";
 
             this.attachments.add(docAsAttach);
@@ -862,7 +862,7 @@ public class Message {
      */
     public JSONArray getForwardedMessages() {
         if (hasFwds()) {
-            JSONObject response = api.callSync("messages.getById", _client, "message_ids", getMessageId());
+            JSONObject response = api.callSync("messages.getById", "message_ids", getMessageId());
 
             if (response.has("response") && response.getJSONObject("response").getJSONArray("items").getJSONObject(0).has("fwd_messages")) {
                 return response.getJSONObject("response").getJSONArray("items").getJSONObject(0).getJSONArray("fwd_messages");
@@ -877,7 +877,7 @@ public class Message {
      */
     public JSONObject getReplyMessage() {
         if (hasFwds()) {
-            JSONObject response = api.callSync("messages.getById", _client, "message_ids", getMessageId());
+            JSONObject response = api.callSync("messages.getById", "message_ids", getMessageId());
 
             if (response.has("response") && response.getJSONObject("response").getJSONArray("items").getJSONObject(0).has("reply_message")) {
                 return response.getJSONObject("response").getJSONArray("items").getJSONObject(0).getJSONObject("reply_message");
@@ -893,7 +893,7 @@ public class Message {
      */
     public JSONArray getAttachments() {
 
-        JSONObject response = api.callSync("messages.getById", _client, "message_ids", getMessageId());
+        JSONObject response = api.callSync("messages.getById", "message_ids", getMessageId());
 
         if (response.has("response") && response.getJSONObject("response").getJSONArray("items").getJSONObject(0).has("attachments"))
             return response.getJSONObject("response").getJSONArray("items").getJSONObject(0).getJSONArray("attachments");
