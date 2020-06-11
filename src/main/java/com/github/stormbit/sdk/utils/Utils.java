@@ -361,6 +361,7 @@ public class Utils {
     }
 
     public static int getId(Client client) {
-        return client.api().callSync("users.get").getJSONObject("response").getInt("id");
+        JSONObject response = client.api().callSync("users.get").getJSONArray("response").getJSONObject(0);
+        return response.getInt("id");
     }
 }
