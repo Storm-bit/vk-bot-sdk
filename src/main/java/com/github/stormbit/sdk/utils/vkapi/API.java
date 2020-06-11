@@ -30,6 +30,7 @@ public abstract class API {
     /**
      * Get the token from client
      * @param client Client
+     * @param executor Executor
      */
     public API(Client client, Executor executor) {
         this.client = client;
