@@ -2,12 +2,9 @@ package com.github.stormbit.sdk.longpoll;
 
 import com.github.stormbit.sdk.callbacks.*;
 import com.github.stormbit.sdk.clients.Client;
-import com.github.stormbit.sdk.longpoll.Events;
-import com.github.stormbit.sdk.longpoll.UpdatesHandler;
 import com.github.stormbit.sdk.objects.Chat;
 import com.github.stormbit.sdk.objects.Message;
 import org.json.JSONObject;
-
 import static com.github.stormbit.sdk.clients.Client.service;
 
 /**
@@ -158,7 +155,7 @@ public class UpdatesHandler2 extends UpdatesHandler {
         boolean messageIsAlreadyHandled = false;
 
         // All necessary data
-        Integer messageId = updateObject.getInt("conversation_message_id"),
+        int messageId = updateObject.getInt("conversation_message_id"),
                 peerId = updateObject.getInt("peer_id"),
                 chatId = 0,
                 timestamp = updateObject.getInt("date");
@@ -175,8 +172,9 @@ public class UpdatesHandler2 extends UpdatesHandler {
             if (attachments != null) {
                 peerId = Integer.parseInt(attachments.getString("from"));
             }
-            attachments = new JSONObject();
         }
+
+        attachments = new JSONObject();
 
         Message message = new Message(
                 this.client,
