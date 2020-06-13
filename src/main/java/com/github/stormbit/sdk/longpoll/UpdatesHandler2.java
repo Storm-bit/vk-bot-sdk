@@ -181,6 +181,7 @@ public class UpdatesHandler2 extends UpdatesHandler {
             if (attachments != null) {
                 peerId = Integer.parseInt(attachments.getString("from"));
             }
+            messageId = updateObject.getInt("conversation_message_id");
         }
 
         attachments = new JSONObject();
