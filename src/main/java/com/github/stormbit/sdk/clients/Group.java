@@ -18,9 +18,6 @@ import java.net.URL;
  */
 public class Group extends Client {
 
-    private String access_token;
-    private Integer id;
-
     private static final Logger LOG = LoggerFactory.getLogger(Group.class);
 
     /**
@@ -30,8 +27,6 @@ public class Group extends Client {
      */
     public Group(String access_token, Integer id) {
         super(access_token, id);
-        this.access_token = access_token;
-        this.id = id;
     }
 
     /**
