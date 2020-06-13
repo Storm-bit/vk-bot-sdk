@@ -164,7 +164,7 @@ public class UpdatesHandler2 extends UpdatesHandler {
         boolean messageIsAlreadyHandled = false;
 
         // All necessary data
-        int messageId = updateObject.getInt("conversation_message_id"),
+        int messageId = updateObject.getInt("id"),
                 peerId = updateObject.getInt("peer_id"),
                 chatId = 0,
                 timestamp = updateObject.getInt("date");
