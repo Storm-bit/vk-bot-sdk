@@ -449,13 +449,7 @@ public class Message {
         return this;
     }
 
-    /**
-     * Async uploading photos
-     * @param photo Photo link: url, from disk or already uploaded to VK as photo{owner_id}_{id}
-     * @param callback callback
-     */
     public void uploadPhoto(String photo, Callback<Object> callback) {
-
         String type = null;
         File photoFile = new File(photo);
         if (photoFile.exists()) {
@@ -505,6 +499,18 @@ public class Message {
                 return;
             }
         }
+
+        if (photoBytes != null) {
+            uploadPhoto(photoBytes, callback);
+        }
+    }
+
+    /**
+     * Async uploading photos
+     * @param photoBytes Photo bytes
+     * @param callback callback
+     */
+    public void uploadPhoto(byte[] photoBytes, Callback<Object> callback) {
 
         if (photoBytes != null) {
 

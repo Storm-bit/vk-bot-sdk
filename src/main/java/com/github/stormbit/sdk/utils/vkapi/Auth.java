@@ -1,9 +1,14 @@
 package com.github.stormbit.sdk.utils.vkapi;
 
 import com.github.stormbit.sdk.exceptions.NotValidAuthorization;
+import com.github.stormbit.sdk.exceptions.TwoFactorError;
+import com.github.stormbit.sdk.utils.RandomUserAgent;
+import com.github.stormbit.sdk.utils.Utils;
+import net.dongliu.commons.collection.Pair;
 import net.dongliu.requests.Header;
 import net.dongliu.requests.Requests;
 import net.dongliu.requests.Session;
+import org.json.JSONObject;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -11,6 +16,7 @@ import org.jsoup.nodes.FormElement;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,14 +29,24 @@ import java.util.stream.Collector;
 public class Auth {
     private String _login;
     private String _password;
-    public static String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36";
+    private static final String STRING_USER_AGENT = RandomUserAgent.getRandomUserAgent();
+    private static final Header USER_AGENT = new Header("User-Agent", STRING_USER_AGENT);
+    private static final String AUTH_HASH = "\\{.*?act: 'a_authcheck_code'.+?hash: '([a-z_0-9]+)'.*?}";
     public Session session;
+    private Listener _listener;
 
 
     public Auth(String login, String password) {
         session = Requests.session();
         _login = login;
         _password = password;
+    }
+
+    public Auth(String login, String password, Listener listener) {
+        session = Requests.session();
+        _login = login;
+        _password = password;
+        _listener = listener;
     }
 
     public Auth() {
@@ -42,7 +58,7 @@ public class Auth {
         try {
 
             String data = session.get("https://vk.com/")
-                    .headers(new Header("User-Agent", USER_AGENT))
+                    .headers(USER_AGENT)
                     .send().readToText();
 
             FormElement form = (FormElement) Jsoup.parse(data).getElementById("quick_login_form");
@@ -57,21 +73,59 @@ public class Auth {
             Map<String, ?> params = s.stream().collect(eloquentCollector);
 
             String response = session.post(form.attr("action"))
-                    .headers(new Header("User-Agent", USER_AGENT), new Header("Content-Length", "0"))
+                    .headers(USER_AGENT, new Header("Content-Length", "0"))
                     .body(params)
                     .send().readToText();
 
-            if (!response.contains("onLoginDone")) {
+            if (response.contains("act=authcheck")) {
+                response = session.get("https://vk.com/login?act=authcheck").send().readToText();
+                _pass_twofactor(response);
+            } else if (!response.contains("onLoginDone")) {
                 throw new NotValidAuthorization("Incorrect login or password");
             } else {
                 a = this;
             }
 
-        } catch (NotValidAuthorization e) {
+        } catch (Exception e) {
             e.printStackTrace();
             System.exit(-1);
         }
         return a;
+    }
+
+    private String _pass_twofactor(String auth_response) throws Exception {
+        Pair<String, Boolean> pair = _listener.two_factor();
+
+        String auth_hash = Utils.regex_search(AUTH_HASH, auth_response, 1);
+
+        Map<String, Object> values = new HashMap<>();
+
+        values.put("act", "a_authcheck_code");
+        values.put("al", "1");
+        values.put("code", pair.getKey());
+        values.put("remember", pair.getValue() ? 1 : 0);
+        values.put("hash", auth_hash);
+
+        String response = session.post("https://vk.com/al_login.php")
+                .headers(USER_AGENT)
+                .body(values)
+                .send().readToText();
+
+        JSONObject data = new JSONObject(response.replaceAll("[<!>-]", ""));
+        int status = data.getJSONArray("payload").getInt(0);
+
+        if (status == 4) { // OK
+            String path = data.getJSONArray("payload").getJSONArray(1).getString(0).replaceAll("[\\\\\"]", "");
+            return session.get("https://vk.com" + path).send().readToText();
+
+        } else if (Arrays.asList(0, 4).contains(status)) { // Incorrect code
+            return _pass_twofactor(auth_response);
+
+        } else if (status == 2) {
+            throw new TwoFactorError("Recaptcha required");
+        }
+
+        throw new Exception("Two factor authentication failed");
     }
 
     private void setData(FormElement form, String login, String password) {
@@ -82,7 +136,7 @@ public class Auth {
             Element passwordField = form.select("[name=pass]").first();
             passwordField.val(password);
             form.submit()
-                    .userAgent(USER_AGENT)
+                    .userAgent(STRING_USER_AGENT)
                     .execute();
 
         } catch (UnknownHostException e) {
@@ -99,6 +153,10 @@ public class Auth {
         if (v2 != null) throw new IllegalStateException(
                 String.format("Duplicate key '%s' (attempted merging incoming value '%s' with existing '%s')", key, v1, v2)
         );
+    }
+
+    public abstract static class Listener {
+        public abstract Pair<String, Boolean> two_factor();
     }
 
 }

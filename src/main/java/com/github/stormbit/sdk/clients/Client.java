@@ -59,6 +59,14 @@ public abstract class Client {
         this.longPoll = new LongPoll(this);
     }
 
+    Client(String login, String password, Auth.Listener listener) {
+        _auth = new Auth(login, password, listener).auth();
+        api = new API1(this);
+
+        this.id = Utils.getId(this);
+        this.longPoll = new LongPoll(this);
+    }
+
     Client(String access_token, Integer id) {
         _auth = new Auth();
         token = access_token;

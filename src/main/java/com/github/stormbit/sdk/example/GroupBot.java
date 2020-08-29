@@ -11,8 +11,8 @@ import org.apache.log4j.PropertyConfigurator;
  */
 @SuppressWarnings("unchecked")
 public class GroupBot {
-    private static final String token = "";
-    private static final Integer id = 0;
+    private static final String token = ""; // Your access_token
+    private static final Integer id = 0; // Your group_id
 
     public static void main(String[] args) {
         // Logging

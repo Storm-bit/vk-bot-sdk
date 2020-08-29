@@ -1,5 +1,7 @@
 package com.github.stormbit.sdk.clients;
 
+import com.github.stormbit.sdk.utils.vkapi.Auth;
+
 /**
  * User client, that contains important methods to work with users
  *
@@ -15,5 +17,9 @@ public class User extends Client {
 
     public User(String login, String password) {
         super(login, password);
+    }
+
+    public User(String login, String password, Auth.Listener listener) {
+        super(login, password, listener);
     }
 }

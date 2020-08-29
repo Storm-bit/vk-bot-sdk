@@ -40,7 +40,7 @@ public class LongPoll {
 
     private Integer version = 3;
     private Integer need_pts = 1;
-    private Double API = 5.101;
+    private Double API = Utils.version;
 
     private volatile boolean longpollIsOn = false;
 

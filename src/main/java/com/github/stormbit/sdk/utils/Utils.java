@@ -30,7 +30,7 @@ public class Utils {
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static JSONObject _hashes = new JSONObject();
     public static final String URL = "https://vk.com/dev";
-    public static final double version = 5.103;
+    public static final double version = 5.122;
     public static String longpollServer = "";
 
     /**
