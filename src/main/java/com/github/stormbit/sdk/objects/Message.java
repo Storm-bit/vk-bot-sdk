@@ -535,9 +535,6 @@ public class Message {
 
                 String uploadUrl = new JSONObject(response.toString()).getString("upload_url");
 
-                // if album_id == 3 make it negative
-                uploadUrl = uploadUrl.replaceAll("aid=3", String.format("aid=%s", -new JSONObject(response.toString()).getInt("album_id")));
-
                 String mimeType = "png";
 
                 try {
