@@ -30,13 +30,14 @@ public class Utils {
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static JSONObject _hashes = new JSONObject();
     public static final String URL = "https://vk.com/dev";
-    public static final double version = 5.122;
+    public static final double version = 5.92;
     public static String longpollServer = "";
 
     /**
      * Analog of JS setTimeout
+     *
      * @param runnable runnable
-     * @param delay delay
+     * @param delay    delay
      */
     public static void setTimeout(Runnable runnable, int delay) {
         new Thread(() -> {
@@ -78,6 +79,7 @@ public class Utils {
 
     /**
      * Arrays and lists to comma separated string
+     *
      * @param o object
      * @return query string
      */
@@ -132,6 +134,7 @@ public class Utils {
 
     /**
      * Convert params query to map
+     *
      * @param query query
      * @return JSONObject query
      */
@@ -338,7 +341,8 @@ public class Utils {
             if (closeable != null) {
                 closeable.close();
             }
-        } catch (IOException ignored) { }
+        } catch (IOException ignored) {
+        }
 
     }
 

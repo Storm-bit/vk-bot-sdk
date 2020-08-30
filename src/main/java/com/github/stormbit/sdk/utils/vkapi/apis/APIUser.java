@@ -5,84 +5,66 @@ import com.github.stormbit.sdk.clients.Client;
 import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.vkapi.API;
 import com.github.stormbit.sdk.utils.vkapi.calls.CallAsync;
-import com.github.stormbit.sdk.utils.vkapi.executors.Executor2;
+import com.github.stormbit.sdk.utils.vkapi.executors.ExecutorUser;
 import org.json.JSONObject;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by Storm-bit on 03/04/2020 19:40
- * API for tokens
+ * Created by Storm-bit
+ * API for users
  */
-public class API2 extends API {
-    /**
-     * Get the token from client
-     * @param client Client
-     */
-    public API2(Client client) {
-        super(client, new Executor2(client, client.auth()));
+public class APIUser extends API {
+
+    public APIUser(Client client) {
+        super(client, new ExecutorUser(client.auth()));
     }
 
-    /**
-     * Call to VK API
-     *
-     * @param method   Method name
-     * @param params   Params as string, JSONObject or Map
-     * @param callback Callback to return the response
-     */
     @Override
     public void call(String method, Object params, Callback<Object> callback) {
 
         try {
             JSONObject parameters = new JSONObject();
 
-            if (params != null) {
-                boolean good = false;
+            boolean good = false;
 
-                // Work with map
-                if (params instanceof Map) {
+            // Work with map
+            if (params instanceof Map) {
 
-                    parameters = new JSONObject((Map) params);
+                parameters = new JSONObject((Map) params);
+                good = true;
+            }
+
+            // with JO
+            if (params instanceof JSONObject) {
+                parameters = (JSONObject) params;
+                good = true;
+            }
+
+            // or string
+            if (params instanceof String) {
+                String s = params.toString();
+                if (s.startsWith("{")) {
+                    parameters = new JSONObject(s);
                     good = true;
-                }
-
-                // with JO
-                if (params instanceof JSONObject) {
-                    parameters = (JSONObject) params;
-                    good = true;
-                }
-
-                // or string
-                if (params instanceof String) {
-                    String s = params.toString();
-                    if (s.startsWith("{")) {
-                        parameters = new JSONObject(s);
+                } else {
+                    if (s.contains("&") && s.contains("=")) {
+                        parameters = Utils.explodeQuery(s);
                         good = true;
-                    } else {
-                        if (s.contains("&") && s.contains("=")) {
-                            parameters = Utils.explodeQuery(s);
-                            good = true;
-                        }
                     }
                 }
+            }
 
-                if (good) {
-                    CallAsync call = new CallAsync(method, parameters, callback);
-                    executor.execute(call);
-                }
+            if (good) {
+                CallAsync call = new CallAsync(method, parameters, callback);
+                executor.execute(call);
             }
         } catch (Exception e) {
             LOG.error("Some error occurred when calling VK API method {} with params {}, error is {}", method, params.toString(), e.getMessage());
         }
     }
 
-    /**
-     * Call to VK API
-     *
-     * @param callback Callback to return the response
-     * @param method   Method name
-     * @param params   Floating count of params
-     */
     @Override
     public void call(Callback<Object> callback, String method, Object... params) {
 
@@ -112,13 +94,7 @@ public class API2 extends API {
         }
     }
 
-    /**
-     * Call to VK API
-     *
-     * @param method Method name
-     * @param params Params as string, JSONObject or Map
-     * @return JSONObject response of VK answer
-     */
+    @Override
     public JSONObject callSync(String method, Object params) {
 
         try {
@@ -156,12 +132,19 @@ public class API2 extends API {
 
                 if (good) {
 
+                    if (!Utils._hashes.has(method)) {
+                        Utils.get_hash(client.auth(), method);
+                    }
+
                     JSONObject data = new JSONObject();
-                    data.put("v", Utils.version);
-                    data.put("access_token", client.getToken());
+                    data.put("act", "a_run_method");
+                    data.put("al", 1);
+                    data.put("hash", Utils._hashes.get(method));
+                    data.put("method", method);
+                    data.put("param_v", Utils.version);
 
                     for (String key : parameters.keySet()) {
-                        data.put(key, parameters.get(key));
+                        data.put("param_" + key, parameters.get(key));
                     }
 
                     Map<String, Object> prms = new HashMap<>();
@@ -169,11 +152,11 @@ public class API2 extends API {
                         prms.put(key, data.get(key));
                     }
 
-                    String responseString = client.auth().session.post("https://api.vk.com/method/" + method)
+                    String responseString = client.auth().session.post(Utils.URL)
                             .body(prms)
-                            .send().readToText().replaceAll("[<!>-]", "");
+                            .send().readToText().replaceAll("[<!>]", "").substring(2);
 
-                    return new JSONObject(responseString);
+                    return new JSONObject(new JSONObject(responseString).getJSONArray("payload").getJSONArray(1).getString(0));
                 }
 
             }
@@ -183,14 +166,7 @@ public class API2 extends API {
         return new JSONObject();
     }
 
-    /**
-     * Call to VK API
-     *
-     * @param method Method name
-     * @param params Floating count of params
-     * @return JSONObject response of VK answer
-     */
-
+    @Override
     public JSONObject callSync(String method, Object... params) {
 
         try {
@@ -202,12 +178,13 @@ public class API2 extends API {
                 if (params.length > 1 && params.length % 2 == 0) {
                     Map<String, Object> map = new HashMap<>();
 
-                    for(int i = 0; i < params.length - 1; i += 2) {
+                    for (int i = 0; i < params.length - 1; i += 2) {
                         map.put(params[i].toString(), params[i + 1]);
                     }
 
                     return this.callSync(method, map);
                 }
+
             }
             return this.callSync(method, new HashMap<String, Object>());
         } catch (Exception e) {

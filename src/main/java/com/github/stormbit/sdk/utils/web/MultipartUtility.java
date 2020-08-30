@@ -11,7 +11,7 @@ import java.nio.file.Files;
 /**
  * OkHttp sending byte[] array not works with vk
  * Using this.
- *
+ * <p>
  * Stealed from <a href="https://stackoverflow.com/a/35925747/7519767">there</a>.
  */
 public class MultipartUtility {
@@ -27,6 +27,7 @@ public class MultipartUtility {
     /**
      * This constructor initializes a new HTTP POST request with content type
      * is set to multipart/form-data
+     *
      * @param requestURL request link
      */
     public MultipartUtility(String requestURL) {
@@ -74,7 +75,7 @@ public class MultipartUtility {
     /**
      * Adds a upload file section to the request
      *
-     * @param fieldName  name of field in body of POST-request
+     * @param fieldName name of field in body of POST-request
      * @param fileName  filename
      * @param bytes     an array of bytes to be uploaded
      */

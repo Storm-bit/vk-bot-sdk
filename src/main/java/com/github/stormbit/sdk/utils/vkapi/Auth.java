@@ -68,7 +68,10 @@ public class Auth {
             List<Connection.KeyVal> s = form.formData();
             Collector<Connection.KeyVal, ?, Map<String, String>> eloquentCollector =
                     Collector.of(HashMap::new, (map, e) -> putUnique(map, e.key(), e.value()),
-                            (m1, m2) -> { m2.forEach((k, v) -> putUnique(m1, k, v)); return m1; });
+                            (m1, m2) -> {
+                                m2.forEach((k, v) -> putUnique(m1, k, v));
+                                return m1;
+                            });
 
             Map<String, ?> params = s.stream().collect(eloquentCollector);
 
@@ -148,7 +151,7 @@ public class Auth {
         }
     }
 
-    public static <K,V> void putUnique(Map<K,V> map, K key, V v1){
+    public static <K, V> void putUnique(Map<K, V> map, K key, V v1) {
         V v2 = map.putIfAbsent(key, v1);
         if (v2 != null) throw new IllegalStateException(
                 String.format("Duplicate key '%s' (attempted merging incoming value '%s' with existing '%s')", key, v1, v2)

@@ -60,9 +60,9 @@ public class LongPoll {
      */
     public LongPoll(Client client) {
         if (client.token == null) {
-            this.updatesHandler = new UpdatesHandler1(client);
+            this.updatesHandler = new UpdatesHandlerUser(client);
         } else {
-            this.updatesHandler = new UpdatesHandler2(client);
+            this.updatesHandler = new UpdatesHandlerGroup(client);
         }
         this.updatesHandler.start();
         this.client = client;
@@ -98,9 +98,9 @@ public class LongPoll {
     public LongPoll(Client client, Integer need_pts, Integer version, Double API, Integer wait, Integer mode) {
 
         if (client.token == null) {
-            this.updatesHandler = new UpdatesHandler1(client);
+            this.updatesHandler = new UpdatesHandlerUser(client);
         } else {
-            this.updatesHandler = new UpdatesHandler2(client);
+            this.updatesHandler = new UpdatesHandlerGroup(client);
         }
         this.updatesHandler.start();
         this.client = client;

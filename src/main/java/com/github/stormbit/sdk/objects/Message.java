@@ -6,6 +6,8 @@ import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.vkapi.API;
 import com.github.stormbit.sdk.utils.vkapi.docs.DocTypes;
 import com.github.stormbit.sdk.utils.web.MultipartUtility;
+import net.dongliu.requests.Requests;
+import net.dongliu.requests.body.Part;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,7 +34,7 @@ public class Message {
     private Integer messageId, peerId, timestamp, randomId, stickerId, chatId, chatIdLong;
     private String text, title;
     private API api;
-    private Client _client;
+    private Client client;
 
     /**
      * Attachments in format of received event from longpoll server
@@ -45,8 +47,8 @@ public class Message {
      */
     private CopyOnWriteArrayList<String> attachments = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<String> forwardedMessages = new CopyOnWriteArrayList<>();
-    private CopyOnWriteArrayList<String> photosToUpload = new CopyOnWriteArrayList<>();
-    private CopyOnWriteArrayList<JSONObject> docsToUpload = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<String> photosToUpload = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<JSONObject> docsToUpload = new CopyOnWriteArrayList<>();
 
     /**
      * Constructor for sent message
@@ -74,7 +76,7 @@ public class Message {
         setAttachments(attachments);
         setRandomId(randomId);
         setTitle(attachments != null && attachments.has("title") ? attachments.getString("title") : " ... ");
-        _client = client;
+        this.client = client;
         api = client.api();
     }
 
@@ -84,8 +86,8 @@ public class Message {
      * @return this
      */
     public Message from(Client client) {
+        this.client = client;
         api = client.api();
-        _client = client;
         return this;
     }
 
@@ -170,16 +172,12 @@ public class Message {
     }
 
     /**
-     * Synchronous adding photo to the message
-     *
      * @param photo String URL, link to vk doc or path to file
      * @return this
      */
     public Message photo(String photo) {
-
-        // Use already loaded photo
         if (Pattern.matches("[htps:/vk.com]?photo-?\\d+_\\d+", photo)) {
-            this.attachments.add(photo.substring(photo.lastIndexOf("photo")));
+            attachments.add(photo.substring(photo.lastIndexOf("photo")));
             return this;
         }
 
@@ -230,10 +228,21 @@ public class Message {
             }
         }
 
+        return photo(photoBytes);
+    }
+
+    /**
+     * Synchronous adding photo to the message
+     *
+     * @param photoBytes photo bytes
+     * @return this
+     */
+    public Message photo(byte[] photoBytes) {
+
         if (photoBytes != null) {
 
             // Getting of server for uploading the photo
-            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", "peer_id", this.peerId);
+            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", "peer_id", peerId);
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
 
             // Some error
@@ -287,6 +296,7 @@ public class Message {
 
             this.attachments.add(photoAsAttach);
         }
+
         return this;
     }
 
@@ -370,7 +380,7 @@ public class Message {
         if (docBytes != null) {
 
             // Getting of server for uploading the photo
-            JSONObject getUploadServerResponse = api.callSync("docs.getMessagesUploadServer", "peer_id", this.peerId, "type", typeOfDoc.getType());
+            JSONObject getUploadServerResponse = api.callSync("docs.getMessagesUploadServer", "peer_id", peerId, "type", typeOfDoc.getType());
 
             String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
 
@@ -514,7 +524,7 @@ public class Message {
 
         if (photoBytes != null) {
 
-            JSONObject params_getMessagesUploadServer = new JSONObject().put("peer_id", chatIdLong);
+            JSONObject params_getMessagesUploadServer = new JSONObject().put("peer_id", peerId);
             api.call("photos.getMessagesUploadServer", params_getMessagesUploadServer, response -> {
 
                 if (response.toString().equalsIgnoreCase("false")) {
@@ -538,11 +548,10 @@ public class Message {
                     LOG.error(e.getMessage());
                 }
 
-                // Uploading the photo
-                MultipartUtility multipartUtility = new MultipartUtility(uploadUrl);
-                multipartUtility.addBytesPart("photo", "photo."+mimeType, photoBytes);
-
-                String response_uploadFileString = multipartUtility.finish();
+                String response_uploadFileString = Requests
+                        .post(uploadUrl)
+                        .multiPartBody(Part.file("photo", "image."+mimeType, photoBytes))
+                        .send().readToText();
 
                 if (response_uploadFileString.length() < 2 || response_uploadFileString.contains("error") || !response_uploadFileString.contains("photo")) {
                     LOG.error("Photo wan't uploaded: {}", response_uploadFileString);
@@ -949,9 +958,13 @@ public class Message {
     public boolean isGifMessage() {
         JSONArray attachments = getAttachments();
 
-        for (int i = 0; i < attachments.length(); i++) {
-            if (attachments.getJSONObject(i).has("type") && attachments.getJSONObject(i).getJSONObject(attachments.getJSONObject(i).getString("type")).has("type") && attachments.getJSONObject(i).getJSONObject(attachments.getJSONObject(i).getString("type")).getInt("type") == 3)
-                return true;
+        for (Object attachment : attachments) {
+            if (attachment instanceof JSONObject) {
+                var attachmentAsJson = (JSONObject) attachment;
+
+                if (attachmentAsJson.has("type") && attachmentAsJson.getJSONObject(attachmentAsJson.getString("type")).has("type") && attachmentAsJson.getJSONObject(attachmentAsJson.getString("type")).getInt("type") == 3)
+                    return true;
+            }
         }
 
         return false;
@@ -991,7 +1004,7 @@ public class Message {
                 return answer;
             } else {
                 for (String key : attachmentsOfReceivedMessage.keySet()) {
-                    if (key.startsWith("attach") && key.endsWith("type")) {
+                    if (key.equals("type")) {
 
                         String value = attachmentsOfReceivedMessage.getString(key);
                         switch (value) {

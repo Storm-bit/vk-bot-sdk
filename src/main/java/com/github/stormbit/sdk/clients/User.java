@@ -4,14 +4,15 @@ import com.github.stormbit.sdk.utils.vkapi.Auth;
 
 /**
  * User client, that contains important methods to work with users
- *
+ * <p>
  * Not need now to put methods there: use API.call
  */
 public class User extends Client {
 
     /**
      * Default constructor
-     * @param login Login of your VK bot
+     *
+     * @param login    Login of your VK bot
      * @param password Password of your VK bot
      */
 

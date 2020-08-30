@@ -10,8 +10,8 @@ import java.util.Scanner;
 
 @SuppressWarnings("unchecked")
 public class Bot {
-    private static final String login = "+79313648702";
-    private static final String password = "709asdfgh123$$$$$$123";
+    private static final String login = "";
+    private static final String password = "";
 
     public static void main(String[] args) {
         // Logging

@@ -3,17 +3,19 @@ package com.github.stormbit.sdk.clients;
 import com.github.stormbit.sdk.callbacks.Callback;
 import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.web.MultipartUtility;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * Created by Storm-bit
- *
+ * <p>
  * Group client, that contains important methods to work with groups
  */
 public class Group extends Client {
@@ -22,6 +24,7 @@ public class Group extends Client {
 
     /**
      * Default constructor
+     *
      * @param access_token Access token key
      * @param id           Group id
      */
@@ -31,7 +34,8 @@ public class Group extends Client {
 
     /**
      * Upload group cover by file from url or from disk
-     * @param cover cover
+     *
+     * @param cover    cover
      * @param callback callback
      */
     public void uploadCover(String cover, Callback<Object> callback) {
@@ -57,12 +61,117 @@ public class Group extends Client {
                 coverUrl = new URL(cover);
                 bytes = Utils.toByteArray(coverUrl);
             } catch (IOException ignored) {
-                LOG.error("Bad string was proviced to uploadCocver method: path to file or url was expected, but got this: {}, error: {}", cover, ignored.toString());
+                LOG.error("Bad string was provided to uploadCover method: path to file or url was expected, but got this: {}, error: {}", cover, ignored.toString());
                 return;
             }
         }
 
         updateCoverByFile(bytes, callback);
+    }
+
+    private Object uploadPhotoToAlbum(String photo, int album_id) {
+        if (this.getId() == null || this.getId() == 0) {
+            LOG.error("Please, provide group_id when initialising the client, because it's impossible to upload cover to group not knowing it id.");
+            return false;
+        }
+
+        byte[] bytes;
+
+        File coverFile = new File(photo);
+        if (coverFile.exists()) {
+            try {
+                bytes = Utils.toByteArray(coverFile.toURI().toURL());
+            } catch (IOException ignored) {
+                LOG.error("Cover file was exists, but IOException occurred: {}", ignored.toString());
+                return false;
+            }
+        } else {
+            URL coverUrl;
+            try {
+                coverUrl = new URL(photo);
+                bytes = Utils.toByteArray(coverUrl);
+            } catch (IOException ignored) {
+                LOG.error("Bad string was provided to uploadPhotoToAlbum method: path to file or url was expected, but got this: {}, error: {}", photo, ignored.toString());
+                return false;
+            }
+        }
+
+        return uploadPhotoToAlbum(bytes, album_id);
+    }
+
+    public Object uploadPhotoToAlbum(byte[] photoBytes, int album_id) {
+        if (photoBytes != null) {
+
+            JSONObject params_getMessagesUploadServer = new JSONObject().put("album_id", album_id).put("group_id", getId());
+            JSONObject response = this.api().callSync("photos.photos.getUploadServer", params_getMessagesUploadServer);
+
+            if (response.toString().equalsIgnoreCase("false")) {
+                LOG.error("Can't get messages upload server, aborting. Photo wont be attached to message.");
+                return false;
+            }
+
+            String uploadUrl = new JSONObject(response.toString()).getString("upload_url");
+
+            // if album_id == 3 make it negative
+            uploadUrl = uploadUrl.replaceAll("aid=3", String.format("aid=%s", -new JSONObject(response.toString()).getInt("album_id")));
+
+            String mimeType = "png";
+
+            try {
+                InputStream is = new BufferedInputStream(new ByteArrayInputStream(photoBytes));
+                mimeType = URLConnection.guessContentTypeFromStream(is);
+                mimeType = mimeType.substring(mimeType.lastIndexOf('/') + 1).replace("jpeg", "jpg");
+            } catch (IOException e) {
+                LOG.error(e.getMessage());
+            }
+
+            // Uploading the photo
+            MultipartUtility multipartUtility = new MultipartUtility(uploadUrl);
+            multipartUtility.addBytesPart("photo", "photo." + mimeType, photoBytes);
+
+            String response_uploadFileString = multipartUtility.finish();
+
+            if (response_uploadFileString.length() < 2 || response_uploadFileString.contains("error") || !response_uploadFileString.contains("photo")) {
+                LOG.error("Photo wan't uploaded: {}", response_uploadFileString);
+                return false;
+            }
+
+            JSONObject getPhotoStringResponse;
+
+            try {
+                getPhotoStringResponse = new JSONObject(response_uploadFileString);
+            } catch (JSONException ignored) {
+                LOG.error("Bad response of uploading photo: {}", response_uploadFileString);
+                return false;
+            }
+
+            if (!getPhotoStringResponse.has("photo") || !getPhotoStringResponse.has("server") || !getPhotoStringResponse.has("hash")) {
+                LOG.error("Bad response of uploading photo, no 'photo', 'server' of 'hash' param: {}", getPhotoStringResponse.toString());
+                return false;
+            }
+
+            String photoParam = getPhotoStringResponse.getString("photo");
+            Object serverParam = getPhotoStringResponse.get("server");
+            String hashParam = getPhotoStringResponse.getString("hash");
+
+            JSONObject params_photosSaveMessagesPhoto = new JSONObject().put("photo", photoParam).put("server", serverParam + "").put("hash", hashParam);
+
+            JSONObject response1 = this.api().callSync("photos.saveMessagesPhoto", params_photosSaveMessagesPhoto);
+
+
+            if (response1.toString().equalsIgnoreCase("false")) {
+                LOG.error("Error when saving uploaded photo: response is 'false', see execution errors.");
+                return false;
+            }
+
+            JSONObject response_saveMessagesPhoto = new JSONArray(response1.toString()).getJSONObject(0);
+
+            int ownerId = response_saveMessagesPhoto.getInt("owner_id"), id = response_saveMessagesPhoto.getInt("id");
+
+            return String.format("photo%s_%s", ownerId, id);
+        }
+
+        return false;
     }
 
     /**

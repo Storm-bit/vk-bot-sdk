@@ -1,59 +1,83 @@
 package com.github.stormbit.sdk.longpoll;
 
-import com.github.stormbit.sdk.callbacks.*;
+import com.github.stormbit.sdk.callbacks.CallbackDouble;
+import com.github.stormbit.sdk.callbacks.CallbackFourth;
+import com.github.stormbit.sdk.callbacks.CallbackTriple;
 import com.github.stormbit.sdk.clients.Client;
 import com.github.stormbit.sdk.objects.Chat;
 import com.github.stormbit.sdk.objects.Message;
+import org.json.JSONArray;
 import org.json.JSONObject;
+
 import static com.github.stormbit.sdk.clients.Client.service;
 
 /**
- * Created by Storm-Bit on 28/09/2017 21:59
- *
+ * Created by Storm-bit on 03/04/2020 19:40
+ * <p>
  * Class for handling all updates in other thread
  */
-public class UpdatesHandler2 extends UpdatesHandler {
+public class UpdatesHandlerUser extends UpdatesHandler {
 
-    UpdatesHandler2(Client client) {
+    /**
+     * Client with access_token
+     */
+    UpdatesHandlerUser(Client client) {
         super(client);
     }
 
+    @Override
     protected void handleCurrentUpdate() {
 
-        JSONObject currentUpdate;
+        JSONArray currentUpdate;
 
-        if (this.queue.updates2.isEmpty()) {
+        if (this.queue.updates.isEmpty()) {
             return;
         } else {
-            currentUpdate = this.queue.shift2();
+            currentUpdate = this.queue.shift();
         }
 
-        Events updateType = Events.get(currentUpdate.getString("type"));
-
-        JSONObject object = currentUpdate.getJSONObject("object");
-
-        if (callbacks.containsKey(updateType.getType())) {
-            callbacks.get(updateType.getType()).onResult(object);
-        }
+        int updateType = currentUpdate.getInt(0);
 
         switch (updateType) {
 
             // Handling new message
-            case MESSAGE_NEW: {
+            case 4: {
+
+                int messageFlags = currentUpdate.getInt(2);
 
                 // check if message is received
-                service.submit(() -> handleMessageUpdate(object));
+                if ((messageFlags & 2) == 0) {
+                    service.submit(() -> handleMessageUpdate(currentUpdate));
+                }
 
                 // handle every
-                handleEveryLongPollUpdate(object);
+                handleEveryLongPollUpdate(currentUpdate);
                 break;
             }
 
             // Handling update (user started typing)
-            case MESSAGE_TYPING_STATE: {
-                handleTypingUpdate(object);
+            case 62: {
+                handleTypingUpdate(currentUpdate);
 
                 // handle every
+                handleEveryLongPollUpdate(currentUpdate);
+                break;
+            }
+
+            // Handling friend online
+            case 8: {
+                handleOnline(currentUpdate);
+
+                //handle every
+                handleEveryLongPollUpdate(currentUpdate);
+                break;
+            }
+
+            // Handling friend offline
+            case 9: {
+                handleOffline(currentUpdate);
+
+                //handle every
                 handleEveryLongPollUpdate(currentUpdate);
                 break;
             }
@@ -69,11 +93,11 @@ public class UpdatesHandler2 extends UpdatesHandler {
      * Handle chat events
      */
     @SuppressWarnings("unchecked")
-    private void handleChatEvents(JSONObject updateObject) {
+    private void handleChatEvents(JSONArray updateObject) {
 
-        Integer chatId = updateObject.getInt("peer_id");
+        Integer chatId = updateObject.getInt(3);
 
-        JSONObject attachments = updateObject.getJSONArray("attachments").length() > 0 ? updateObject.getJSONArray("attachments").getJSONObject(0) : null;
+        JSONObject attachments = (updateObject.length() > 6 ? (updateObject.get(6).toString().startsWith("{") ? new JSONObject(updateObject.get(6).toString()) : null) : null);
 
         // Return if no attachments
         // Because there no events,
@@ -107,7 +131,7 @@ public class UpdatesHandler2 extends UpdatesHandler {
                 }
                 case "chat_photo_update": {
 
-                    JSONObject photo = new JSONObject(client.api().callSync("messages.getById","message_ids", updateObject.getInt("conversation_message_id")).getJSONObject("response").getJSONArray("items").getJSONObject(0).getJSONArray("attachments").getJSONObject(0).getJSONObject("photo"));
+                    JSONObject photo = new JSONObject(client.api().callSync("messages.getById", client, "message_ids", updateObject.getInt(1))).getJSONObject("response").getJSONArray("items").getJSONObject(0).getJSONArray("attachments").getJSONObject(0).getJSONObject("photo");
 
                     if (chatCallbacks.containsKey("onChatPhotoChangedCallback")) {
                         ((CallbackTriple<JSONObject, Integer, Integer>) chatCallbacks.get("onChatPhotoChangedCallback")).onEvent(photo, from, chatId);
@@ -148,7 +172,7 @@ public class UpdatesHandler2 extends UpdatesHandler {
      * Handle every longpoll event
      */
     @SuppressWarnings("unchecked")
-    private void handleEveryLongPollUpdate(JSONObject updateObject) {
+    private void handleEveryLongPollUpdate(JSONArray updateObject) {
         if (callbacks.containsKey("OnEveryLongPollEventCallback")) {
             callbacks.get("OnEveryLongPollEventCallback").onResult(updateObject);
         }
@@ -158,22 +182,22 @@ public class UpdatesHandler2 extends UpdatesHandler {
      * Handle new message
      */
     @SuppressWarnings("unchecked")
-    private void handleMessageUpdate(JSONObject updateObject) {
+    private void handleMessageUpdate(JSONArray updateObject) {
 
         // Flag
         boolean messageIsAlreadyHandled = false;
 
         // All necessary data
-        int messageId = updateObject.getInt("id"),
-                peerId = updateObject.getInt("peer_id"),
+        int messageId = updateObject.getInt(1),
+                peerId = updateObject.getInt(3),
                 chatId = 0,
-                timestamp = updateObject.getInt("date");
+                timestamp = updateObject.getInt(4);
 
-        String messageText = updateObject.getString("text");
+        String messageText = updateObject.getString(5);
 
-        JSONObject attachments = updateObject.getJSONArray("attachments").length() > 0 ? updateObject.getJSONArray("attachments").getJSONObject(0) : null;
+        JSONObject attachments = (updateObject.length() > 6 ? (updateObject.get(6).toString().startsWith("{") ? new JSONObject(updateObject.get(6).toString()) : null) : null);
 
-        Integer randomId = updateObject.getInt("random_id");
+        Integer randomId = updateObject.length() > 7 ? updateObject.getInt(8) : null;
 
         // Check for chat
         if (peerId > Chat.CHAT_PREFIX) {
@@ -181,10 +205,7 @@ public class UpdatesHandler2 extends UpdatesHandler {
             if (attachments != null) {
                 peerId = Integer.parseInt(attachments.getString("from"));
             }
-            messageId = updateObject.getInt("conversation_message_id");
         }
-
-        attachments = new JSONObject();
 
         Message message = new Message(
                 this.client,
@@ -340,14 +361,33 @@ public class UpdatesHandler2 extends UpdatesHandler {
         }
     }
 
+    private void handleOnline(JSONArray updateObject) {
+        Integer targetId = updateObject.getInt(1),
+                timestamp = updateObject.getInt(3);
+
+
+        if (callbacks.containsKey("OnFriendOnlineCallback")) {
+            ((CallbackDouble<Integer, Integer>) abstractCallbacks.get("OnFriendOnlineCallback")).onEvent(targetId, timestamp);
+        }
+    }
+
+    private void handleOffline(JSONArray updateObject) {
+        Integer targetId = updateObject.getInt(1),
+                timestamp = updateObject.getInt(3);
+
+        if (callbacks.containsKey("OnFriendOfflineCallback")) {
+            ((CallbackDouble<Integer, Integer>) abstractCallbacks.get("OnFriendOfflineCallback")).onEvent(targetId, timestamp);
+        }
+    }
+
     /**
      * Handle dialog with typing user
      */
     @SuppressWarnings("unchecked")
-    private void handleTypingUpdate(JSONObject updateObject) {
+    private void handleTypingUpdate(JSONArray updateObject) {
 
         if (callbacks.containsKey("OnTypingCallback")) {
-            callbacks.get("OnTypingCallback").onResult(updateObject.getString("from_id"));
+            callbacks.get("OnTypingCallback").onResult(updateObject.getInt(1));
         }
     }
 

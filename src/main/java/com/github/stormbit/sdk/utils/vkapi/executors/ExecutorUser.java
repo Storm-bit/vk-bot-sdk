@@ -14,9 +14,9 @@ import java.util.stream.IntStream;
  * Created by Storm-bit
  * Executor for users
  */
-public class Executor1 extends Executor {
+public class ExecutorUser extends Executor {
 
-    public Executor1(Auth auth) {
+    public ExecutorUser(Auth auth) {
         super(auth);
     }
 
@@ -62,7 +62,7 @@ public class Executor1 extends Executor {
 
                     String responseString = _auth.session.post(Utils.URL)
                             .body(prms)
-                            .send().readToText().replaceAll("[<!>-]", "");
+                            .send().readToText().replaceAll("[<!>]", "").substring(2);
 
                     if (LOG_REQUESTS) {
                         LOG.error("New executing request response: {}", responseString);

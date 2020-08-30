@@ -9,9 +9,9 @@ import com.github.stormbit.sdk.objects.Chat;
 import com.github.stormbit.sdk.objects.Message;
 import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.vkapi.API;
-import com.github.stormbit.sdk.utils.vkapi.apis.API1;
 import com.github.stormbit.sdk.utils.vkapi.Auth;
-import com.github.stormbit.sdk.utils.vkapi.apis.API2;
+import com.github.stormbit.sdk.utils.vkapi.apis.APIGroup;
+import com.github.stormbit.sdk.utils.vkapi.apis.APIUser;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -21,7 +21,7 @@ import java.util.concurrent.*;
 /**
  * Created by PeterSamokhin on 28/09/2017 21:59
  * Updated by Storm-bit on 03/04/2020 19:40
- *
+ * <p>
  * Main client class, that contains all necessary methods and fields
  * for base work with VK and longpoll server
  */
@@ -48,12 +48,12 @@ public abstract class Client {
     private final ConcurrentHashMap<Integer, Chat> chats = new ConcurrentHashMap<>();
 
     /**
-     * @param login        Login of your VK bot account
-     * @param password     Password of your VK bot account
+     * @param login    Login of your VK bot account
+     * @param password Password of your VK bot account
      */
     Client(String login, String password) {
         _auth = new Auth(login, password).auth();
-        api = new API1(this);
+        api = new APIUser(this);
         this.id = Utils.getId(this);
 
         this.longPoll = new LongPoll(this);
@@ -61,7 +61,7 @@ public abstract class Client {
 
     Client(String login, String password, Auth.Listener listener) {
         _auth = new Auth(login, password, listener).auth();
-        api = new API1(this);
+        api = new APIUser(this);
 
         this.id = Utils.getId(this);
         this.longPoll = new LongPoll(this);
@@ -71,7 +71,7 @@ public abstract class Client {
         _auth = new Auth();
         token = access_token;
         this.id = id;
-        api = new API2(this);
+        api = new APIGroup(this);
 
         this.longPoll = new LongPoll(this);
     }
@@ -93,6 +93,7 @@ public abstract class Client {
 
     /**
      * Get longpoll of current client
+     *
      * @return longpoll object
      */
     public LongPoll longPoll() {
@@ -105,6 +106,7 @@ public abstract class Client {
 
     /**
      * Get API for making requests
+     *
      * @return api object
      */
     public API api() {
@@ -115,6 +117,7 @@ public abstract class Client {
      * If the client need to start typing
      * after receiving message
      * and until client's message is sent
+     *
      * @param enable true or false
      */
     public void enableTyping(boolean enable) {
@@ -244,6 +247,7 @@ public abstract class Client {
     /**
      * If true, all updates from longpoll server
      * will be logged to level 'INFO'
+     *
      * @param enable true or false
      */
     public void enableLoggingUpdates(boolean enable) {

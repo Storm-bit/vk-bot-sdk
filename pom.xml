@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.storm-bit</groupId>
     <artifactId>vk-bot-sdk</artifactId>
-    <version>1.1.8</version>
+    <version>1.1.9</version>
     <packaging>jar</packaging>
 
     <name>VK Bot SDK</name>
@@ -85,23 +85,6 @@
         </developer>
     </developers>
 
-<!--    <profiles>-->
-<!--        <profile>-->
-<!--            <id>release</id>-->
-<!--            <activation>-->
-<!--                <property>-->
-<!--                    <name>performRelease</name>-->
-<!--                    <value>true</value>-->
-<!--                </property>-->
-<!--            </activation>-->
-<!--            <build>-->
-<!--                <plugins>-->
-
-<!--                </plugins>-->
-<!--            </build>-->
-<!--        </profile>-->
-<!--    </profiles>-->
-
     <build>
         <plugins>
             <plugin>
@@ -141,6 +124,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
+                    <javadocExecutable>${java.home}\bin\javadoc.exe</javadocExecutable>
                     <source>11</source>
                 </configuration>
                 <executions>

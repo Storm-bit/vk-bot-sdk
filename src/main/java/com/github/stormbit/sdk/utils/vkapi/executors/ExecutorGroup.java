@@ -15,10 +15,10 @@ import java.util.stream.IntStream;
  * Created by Storm-bit
  * Executor for tokens
  */
-public class Executor2 extends Executor {
+public class ExecutorGroup extends Executor {
     private Client client;
 
-    public Executor2(Client client, Auth auth) {
+    public ExecutorGroup(Client client, Auth auth) {
         super(auth);
         this.client = client;
     }
@@ -58,7 +58,7 @@ public class Executor2 extends Executor {
 
                     String responseString = _auth.session.post("https://api.vk.com/method/" + method)
                             .body(prms)
-                            .send().readToText().replaceAll("[<!>-]", "");
+                            .send().readToText().replaceAll("[<!>]", "");
 
                     if (LOG_REQUESTS) {
                         LOG.error("New executing request response: {}", responseString);

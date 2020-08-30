@@ -15,7 +15,7 @@ import java.net.URLEncoder;
 /**
  * Created by PeterSamokhin on 28/09/2017 21:59
  * Updated by Storm-bit on 03/04/2020 19:40
- *
+ * <p>
  * Simple interacting with VK API
  */
 public abstract class API {
@@ -29,7 +29,8 @@ public abstract class API {
 
     /**
      * Get the token from client
-     * @param client Client
+     *
+     * @param client   Client
      * @param executor Executor
      */
     public API(Client client, Executor executor) {
@@ -61,6 +62,7 @@ public abstract class API {
     /**
      * Call to 'execute' method, because can not call API.execute inside execute.
      * More: <a href="https://vk.com/dev/execute">link</a>;
+     *
      * @param code code
      * @return JSONObject response of VK answer
      */

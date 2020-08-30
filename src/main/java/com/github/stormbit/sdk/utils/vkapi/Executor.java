@@ -1,19 +1,20 @@
 package com.github.stormbit.sdk.utils.vkapi;
 
+import com.github.stormbit.sdk.clients.Client;
 import com.github.stormbit.sdk.utils.vkapi.calls.Call;
 import com.github.stormbit.sdk.utils.vkapi.calls.CallAsync;
 import com.github.stormbit.sdk.utils.vkapi.calls.CallSync;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.github.stormbit.sdk.clients.Client;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by PeterSamokhin on 28/09/2017 21:59
  * Updated by RomanBoycov on 03/04/2020 19:40
- *
+ * <p>
  * Best way to use VK API: you can call up to 25 vk api methods by call execute once
  * Because without execute you only can call up to 3 methods per second
  * <p>
