@@ -2,7 +2,6 @@ package com.github.stormbit.sdk.utils.vkapi;
 
 import com.github.stormbit.sdk.exceptions.NotValidAuthorization;
 import com.github.stormbit.sdk.exceptions.TwoFactorError;
-import com.github.stormbit.sdk.utils.RandomUserAgent;
 import com.github.stormbit.sdk.utils.Utils;
 import net.dongliu.commons.collection.Pair;
 import net.dongliu.requests.Header;
@@ -29,7 +28,7 @@ import java.util.stream.Collector;
 public class Auth {
     private String _login;
     private String _password;
-    private static final String STRING_USER_AGENT = RandomUserAgent.getRandomUserAgent();
+    private static final String STRING_USER_AGENT = "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36";
     private static final Header USER_AGENT = new Header("User-Agent", STRING_USER_AGENT);
     private static final String AUTH_HASH = "\\{.*?act: 'a_authcheck_code'.+?hash: '([a-z_0-9]+)'.*?}";
     public Session session;
@@ -125,7 +124,7 @@ public class Auth {
             return _pass_twofactor(auth_response);
 
         } else if (status == 2) {
-            throw new TwoFactorError("Recaptcha required");
+            throw new TwoFactorError("ReCaptcha required");
         }
 
         throw new Exception("Two factor authentication failed");

@@ -5,12 +5,15 @@ import com.github.stormbit.sdk.callbacks.Callback;
 import com.github.stormbit.sdk.clients.Client;
 import com.github.stormbit.sdk.longpoll.responses.GetLongPollServerResponse;
 import com.github.stormbit.sdk.utils.Utils;
-import com.github.stormbit.sdk.utils.web.Connection;
+import net.dongliu.requests.Header;
+import net.dongliu.requests.Requests;
+import net.dongliu.requests.exception.RequestsException;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +24,7 @@ import java.util.Map;
  * Class for work with VK longpoll server
  * More: <a href="https://vk.com/dev/using_longpoll">link</a>
  */
+@SuppressWarnings({"unused"})
 public class LongPoll {
 
     private static final Logger LOG = LoggerFactory.getLogger(LongPoll.class);
@@ -202,8 +206,6 @@ public class LongPoll {
         this.ts = serverResponse.getTs();
         this.pts = serverResponse.getPts();
 
-        Utils.longpollServer = server + "?act=a_check&key=" + key + "&ts=" + ts + "&wait=" + wait + "&mode=" + mode + "&version=" + version + "&msgs_limit=100000";
-
         return true;
     }
 
@@ -261,11 +263,6 @@ public class LongPoll {
         JSONObject params = new JSONObject();
         params.put("group_id", client.getId());
 
-        Map<String, Object> prms = new HashMap<>();
-        for (String key : params.keySet()) {
-            prms.put(key, params.get(key));
-        }
-
         JSONObject result = client.api().callSync(method, params);
 
         JSONObject response;
@@ -314,7 +311,12 @@ public class LongPoll {
 
                 String url = server + "?act=a_check&key=" + key + "&ts=" + ts + "&wait=" + wait + "&mode=" + mode + "&version=" + version + "&msgs_limit=100000";
 
-                responseString = Connection.getRequestResponse(url);
+                try {
+                    responseString = Requests.get(url)
+                            .timeout(30000)
+                            .headers(new Header("Accept-Charset", "utf-8"))
+                            .send().readToText();
+                } catch (RequestsException ignored) { continue; }
 
                 response = new JSONObject(responseString);
 
@@ -322,8 +324,8 @@ public class LongPoll {
                 LOG.error("Some error occurred, no updates got from longpoll server: {}", responseString);
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException ignored1) {
-                }
+                } catch (InterruptedException ignored1) { }
+
                 continue;
             }
 

@@ -15,9 +15,10 @@ import java.net.URLEncoder;
 /**
  * Created by PeterSamokhin on 28/09/2017 21:59
  * Updated by Storm-bit on 03/04/2020 19:40
- * <p>
+ *
  * Simple interacting with VK API
  */
+@SuppressWarnings("unused")
 public abstract class API {
 
     protected final Logger LOG = LoggerFactory.getLogger(API.class);
@@ -112,10 +113,10 @@ public abstract class API {
         code.append("];");
 
         JSONObject response = null;
+
         try {
             response = new JSONObject(callSync("execute", new JSONObject().put("code", URLEncoder.encode(code.toString(), "UTF-8"))));
-        } catch (UnsupportedEncodingException ignored) {
-        }
+        } catch (UnsupportedEncodingException ignored) { }
 
         return response.getJSONArray("response");
     }

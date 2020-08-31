@@ -2,24 +2,14 @@ package com.github.stormbit.sdk.objects;
 
 import com.github.stormbit.sdk.callbacks.Callback;
 import com.github.stormbit.sdk.clients.Client;
-import com.github.stormbit.sdk.utils.Utils;
 import com.github.stormbit.sdk.utils.vkapi.API;
+import com.github.stormbit.sdk.utils.vkapi.Upload;
 import com.github.stormbit.sdk.utils.vkapi.docs.DocTypes;
-import com.github.stormbit.sdk.utils.web.MultipartUtility;
-import net.dongliu.requests.Requests;
-import net.dongliu.requests.body.Part;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
@@ -27,20 +17,22 @@ import java.util.regex.Pattern;
 /**
  * Message object for both (received and sent) messages
  */
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class Message {
 
     private static final Logger LOG = LoggerFactory.getLogger(Message.class);
 
-    private Integer messageId, peerId, timestamp, randomId, stickerId, chatId, chatIdLong;
+    private Integer messageId, conversationMessageId, peerId, timestamp, randomId, stickerId, chatId, chatIdLong;
     private String text, title;
     private API api;
+    private Upload upload;
     private Client client;
 
     /**
      * Attachments in format of received event from longpoll server
      * More: <a href="https://vk.com/dev/using_longpoll_2">link</a>
      */
-    private JSONObject attachmentsOfReceivedMessage;
+    private JSONObject attachmentsOfReceivedMessage = new JSONObject();
 
     /**
      * Attachments in format [photo62802565_456241137, photo111_111, doc100_500]
@@ -78,6 +70,7 @@ public class Message {
         setTitle(attachments != null && attachments.has("title") ? attachments.getString("title") : " ... ");
         this.client = client;
         api = client.api();
+        upload = new Upload(client);
     }
 
     /**
@@ -86,8 +79,10 @@ public class Message {
      * @return this
      */
     public Message from(Client client) {
-        this.client = client;
         api = client.api();
+        upload = new Upload(client);
+        this.client = client;
+
         return this;
     }
 
@@ -181,248 +176,7 @@ public class Message {
             return this;
         }
 
-        String type = null;
-        File photoFile = new File(photo);
-        if (photoFile.exists()) {
-            type = "fromFile";
-        }
-
-        URL photoUrl = null;
-        if (type == null) {
-            try {
-                photoUrl = new URL(photo);
-                type = "fromUrl";
-            } catch (MalformedURLException ignored) {
-                LOG.error("Error when trying add photo to message: file not found, or url is bad. Your param: {}", photo);
-                return this;
-            }
-        }
-
-        byte[] photoBytes;
-
-        switch (type) {
-
-            case "fromFile": {
-                try {
-                    photoBytes = Files.readAllBytes(Paths.get(photoFile.toURI()));
-                } catch (IOException ignored) {
-                    LOG.error("Error when reading file {}", photoFile.getAbsolutePath());
-                    return this;
-                }
-                break;
-            }
-
-            case "fromUrl": {
-                try {
-                    photoBytes = Utils.toByteArray(photoUrl);
-                } catch (IOException e) {
-                    LOG.error("Error {} occured when reading URL {}", e.toString(), photo);
-                    return this;
-                }
-                break;
-            }
-
-            default: {
-                LOG.error("Bad 'photo' string: path to file, URL or already uploaded 'photo()_()' was expected.");
-                return this;
-            }
-        }
-
-        return photo(photoBytes);
-    }
-
-    /**
-     * Synchronous adding photo to the message
-     *
-     * @param photoBytes photo bytes
-     * @return this
-     */
-    public Message photo(byte[] photoBytes) {
-
-        if (photoBytes != null) {
-
-            // Getting of server for uploading the photo
-            JSONObject getUploadServerResponse = api.callSync("photos.getMessagesUploadServer", "peer_id", peerId);
-            String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
-
-            // Some error
-            if (uploadUrl == null) {
-                LOG.error("No upload url in response: {}", getUploadServerResponse);
-                return this;
-            }
-
-            // if album_id == 3 make it negative
-            uploadUrl = uploadUrl.replaceAll("aid=3", String.format("aid=%s", -getUploadServerResponse.getJSONObject("response").getInt("album_id")));
-
-            String mimeType = "png";
-
-            try {
-                InputStream is = new BufferedInputStream(new ByteArrayInputStream(photoBytes));
-                mimeType = URLConnection.guessContentTypeFromStream(is);
-                mimeType = mimeType.substring(mimeType.lastIndexOf('/')+1).replace("jpeg", "jpg");
-            } catch (IOException e) {
-                LOG.error(e.getMessage());
-            }
-
-            // Uploading the photo
-            MultipartUtility multipartUtility = new MultipartUtility(uploadUrl);
-            multipartUtility.addBytesPart("photo", "photo."+mimeType, photoBytes);
-            String uploadingOfPhotoResponseString = multipartUtility.finish();
-
-            JSONObject uploadingOfPhotoResponse;
-
-            try {
-                uploadingOfPhotoResponse = new JSONObject(uploadingOfPhotoResponseString);
-            } catch (JSONException e) {
-                LOG.error("Bad response of uploading photo: {}, error: {}", uploadingOfPhotoResponseString, e.toString());
-                return this;
-            }
-
-            // Getting necessary params
-            String server, photo_param, hash;
-            if (uploadingOfPhotoResponse.has("server") && uploadingOfPhotoResponse.has("photo") && uploadingOfPhotoResponse.has("hash")) {
-                server = "" + uploadingOfPhotoResponse.getInt("server");
-                photo_param = uploadingOfPhotoResponse.get("photo").toString();
-                hash = uploadingOfPhotoResponse.getString("hash");
-            } else {
-                LOG.error("No 'photo', 'server' or 'hash' param in response {}", uploadingOfPhotoResponseString);
-                return this;
-            }
-
-            // Saving the photo
-            JSONObject saveMessagesPhotoResponse = api.callSync("photos.saveMessagesPhoto", "server", server, "photo", photo_param, "hash", hash);
-
-            String photoAsAttach = saveMessagesPhotoResponse.has("response") ? "photo" + saveMessagesPhotoResponse.getJSONArray("response").getJSONObject(0).getInt("owner_id") + "_" + saveMessagesPhotoResponse.getJSONArray("response").getJSONObject(0).getInt("id") : "";
-
-            this.attachments.add(photoAsAttach);
-        }
-
-        return this;
-    }
-
-    /**
-     * Synchronous adding doc to the message
-     * @param doc       String URL, link to vk doc or path to file
-     * @param typeOfDoc Type of doc, 'audio_message' or 'graffiti' ('doc' as default)
-     * @return this
-     */
-    public Message doc(String doc, DocTypes typeOfDoc) {
-
-        // Use already loaded photo
-        if (Pattern.matches("[htps:/vk.com]?doc-?\\d+_\\d+", doc)) {
-            this.attachments.add(doc.substring(doc.lastIndexOf("doc")));
-            return this;
-        }
-
-        String type = null;
-        File docFile = new File(doc);
-        if (docFile.exists()) {
-            type = "fromFile";
-        }
-
-        URL docUrl = null;
-        if (type == null) {
-            try {
-                docUrl = new URL(doc);
-                type = "fromUrl";
-            } catch (MalformedURLException ignored) {
-                LOG.error("Error when trying add doc to message: file not found, or url is bad. Your param: {}", doc);
-                return this;
-            }
-        }
-
-        byte[] docBytes;
-        String fileNameField;
-
-        switch (type) {
-
-            case "fromFile": {
-                try {
-                    docBytes = Files.readAllBytes(Paths.get(docFile.toURI()));
-                    fileNameField = docFile.getName();
-                } catch (IOException e) {
-                    LOG.error("Error when reading file {}", docFile.getAbsolutePath());
-                    return this;
-                }
-                break;
-            }
-
-            case "fromUrl": {
-                try {
-                    URLConnection conn = docUrl.openConnection();
-
-                    try {
-                        docBytes = Utils.toByteArray(conn);
-                        fileNameField = Utils.guessFileNameByContentType(conn.getContentType());
-                    } finally {
-                        Utils.close(conn);
-                    }
-                } catch (IOException e) {
-                    LOG.error("Error {} occured when reading URL {}", e.toString(), doc);
-                    return this;
-                }
-                break;
-            }
-
-            default: {
-                LOG.error("Bad 'doc' string: path to file, URL or already uploaded 'doc()_()' was expected, but got this: {}", doc);
-                return this;
-            }
-        }
-
-        docFromBytes(docBytes, typeOfDoc, fileNameField);
-
-        return this;
-    }
-
-    public Message docFromBytes(byte[] docBytes, DocTypes typeOfDoc, String fileNameField) {
-
-        if (docBytes != null) {
-
-            // Getting of server for uploading the photo
-            JSONObject getUploadServerResponse = api.callSync("docs.getMessagesUploadServer", "peer_id", peerId, "type", typeOfDoc.getType());
-
-            String uploadUrl = getUploadServerResponse.has("response") ? getUploadServerResponse.getJSONObject("response").has("upload_url") ? getUploadServerResponse.getJSONObject("response").getString("upload_url") : null : null;
-
-            // Some error
-            if (uploadUrl == null) {
-                LOG.error("No upload url in response: {}", getUploadServerResponse);
-                return this;
-            }
-
-            // Uploading the photo
-            String uploadingOfDocResponseString;
-
-            MultipartUtility multipartUtility = new MultipartUtility(uploadUrl);
-            multipartUtility.addBytesPart("file", fileNameField, docBytes);
-            uploadingOfDocResponseString = multipartUtility.finish();
-
-            JSONObject uploadingOfDocResponse;
-
-            try {
-                uploadingOfDocResponse = new JSONObject(uploadingOfDocResponseString);
-            } catch (JSONException e) {
-                LOG.error("Bad response of uploading doc: {}, error: {}", uploadingOfDocResponseString, e.toString());
-                return this;
-            }
-
-            // Getting necessary params
-            String file;
-            if (uploadingOfDocResponse.has("file")) {
-                file = uploadingOfDocResponse.getString("file");
-            } else {
-                LOG.error("No 'file' param in response {}", uploadingOfDocResponseString);
-                return this;
-            }
-
-            // Saving the photo
-            JSONObject saveMessagesDocResponse = api.callSync("docs.save", "file", file);
-            String docAsAttach = saveMessagesDocResponse.has("response") ? "doc" + saveMessagesDocResponse.getJSONArray("response").getJSONObject(0).getInt("owner_id") + "_" + saveMessagesDocResponse.getJSONArray("response").getJSONObject(0).getInt("id") : "";
-
-            this.attachments.add(docAsAttach);
-        } else {
-            LOG.error("Got file or url of doc to be uploaded, but some error occured and readed 0 bytes.");
-        }
+        this.attachments.add(upload.uploadPhoto(photo, peerId));
 
         return this;
     }
@@ -434,7 +188,10 @@ public class Message {
      * @return this
      */
     public Message doc(String doc) {
-        this.doc(doc, DocTypes.DOC);
+        String docAsAttach = upload.uploadDoc(doc, peerId, DocTypes.DOC);
+
+        if (docAsAttach != null) this.attachments.add(docAsAttach);
+
         return this;
     }
 
@@ -456,272 +213,8 @@ public class Message {
 
         // Use photo from url of disc
         this.photosToUpload.add(photo);
+
         return this;
-    }
-
-    public void uploadPhoto(String photo, Callback<Object> callback) {
-        String type = null;
-        File photoFile = new File(photo);
-        if (photoFile.exists()) {
-            type = "fromFile";
-        }
-
-        URL photoUrl = null;
-        if (type == null) {
-            try {
-                photoUrl = new URL(photo);
-                type = "fromUrl";
-            } catch (MalformedURLException ignored) {
-                LOG.error("Error when trying add photo to message: file not found, or url is bad. Your param: {}", photo);
-                callback.onResult("false");
-                return;
-            }
-        }
-
-        byte[] photoBytes;
-        switch (type) {
-
-            case "fromFile": {
-                try {
-                    photoBytes = Files.readAllBytes(Paths.get(photoFile.toURI()));
-                } catch (IOException ignored) {
-                    LOG.error("Error when reading file {}", photoFile.getAbsolutePath());
-                    callback.onResult("false");
-                    return;
-                }
-                break;
-            }
-
-            case "fromUrl": {
-                try {
-                    photoBytes = Utils.toByteArray(photoUrl);
-                } catch (IOException e) {
-                    LOG.error("Error {} occured when reading URL {}", e.toString(), photo);
-                    callback.onResult("false");
-                    return;
-                }
-                break;
-            }
-
-            default: {
-                LOG.error("Bad 'photo' string: path to file, URL or already uploaded 'photo()_()' was expected.");
-                callback.onResult("false");
-                return;
-            }
-        }
-
-        if (photoBytes != null) {
-            uploadPhoto(photoBytes, callback);
-        }
-    }
-
-    /**
-     * Async uploading photos
-     * @param photoBytes Photo bytes
-     * @param callback callback
-     */
-    public void uploadPhoto(byte[] photoBytes, Callback<Object> callback) {
-
-        if (photoBytes != null) {
-
-            JSONObject params_getMessagesUploadServer = new JSONObject().put("peer_id", peerId);
-            api.call("photos.getMessagesUploadServer", params_getMessagesUploadServer, response -> {
-
-                if (response.toString().equalsIgnoreCase("false")) {
-                    LOG.error("Can't get messages upload server, aborting. Photo wont be attached to message.");
-                    callback.onResult(false);
-                    return;
-                }
-
-                String uploadUrl = new JSONObject(response.toString()).getString("upload_url");
-
-                String mimeType = "png";
-
-                try {
-                    InputStream is = new BufferedInputStream(new ByteArrayInputStream(photoBytes));
-                    mimeType = URLConnection.guessContentTypeFromStream(is);
-                    mimeType = mimeType.substring(mimeType.lastIndexOf('/')+1).replace("jpeg", "jpg");
-                } catch (IOException e) {
-                    LOG.error(e.getMessage());
-                }
-
-                String response_uploadFileString = Requests
-                        .post(uploadUrl)
-                        .multiPartBody(Part.file("photo", "image."+mimeType, photoBytes))
-                        .send().readToText();
-
-                if (response_uploadFileString.length() < 2 || response_uploadFileString.contains("error") || !response_uploadFileString.contains("photo")) {
-                    LOG.error("Photo wan't uploaded: {}", response_uploadFileString);
-                    callback.onResult("false");
-                    return;
-                }
-
-                JSONObject getPhotoStringResponse;
-
-                try {
-                    getPhotoStringResponse = new JSONObject(response_uploadFileString);
-                } catch (JSONException ignored) {
-                    LOG.error("Bad response of uploading photo: {}", response_uploadFileString);
-                    callback.onResult("false");
-                    return;
-                }
-
-                if (!getPhotoStringResponse.has("photo") || !getPhotoStringResponse.has("server") || !getPhotoStringResponse.has("hash")) {
-                    LOG.error("Bad response of uploading photo, no 'photo', 'server' of 'hash' param: {}", getPhotoStringResponse.toString());
-                    callback.onResult("false");
-                    return;
-                }
-
-                String photoParam = getPhotoStringResponse.getString("photo");
-                Object serverParam = getPhotoStringResponse.get("server");
-                String hashParam = getPhotoStringResponse.getString("hash");
-
-                JSONObject params_photosSaveMessagesPhoto = new JSONObject().put("photo", photoParam).put("server", serverParam + "").put("hash", hashParam);
-
-                api.call("photos.saveMessagesPhoto", params_photosSaveMessagesPhoto, response1 -> {
-
-
-                    if (response1.toString().equalsIgnoreCase("false")) {
-                        LOG.error("Error when saving uploaded photo: response is 'false', see execution errors.");
-                        callback.onResult("false");
-                        return;
-                    }
-
-                    JSONObject response_saveMessagesPhoto = new JSONArray(response1.toString()).getJSONObject(0);
-
-                    int ownerId = response_saveMessagesPhoto.getInt("owner_id"), id = response_saveMessagesPhoto.getInt("id");
-
-                    String attach = String.format("photo%s_%s", ownerId, id);
-                    callback.onResult(attach);
-                });
-            });
-        }
-    }
-
-    /**
-     * Async uploading doc
-     * @param doc Doc link: url, from disk or already uploaded to VK as doc{owner_id}_{id}
-     * @param callback callback
-     */
-    public void uploadDoc(JSONObject doc, Callback<Object> callback) {
-
-        String type = null, fileNameField;
-        File docFile = new File(doc.getString("doc"));
-        if (docFile.exists()) {
-            type = "fromFile";
-        }
-
-        URL docUrl = null;
-        if (type == null) {
-            try {
-                docUrl = new URL(doc.getString("doc"));
-                type = "fromUrl";
-            } catch (MalformedURLException ignored) {
-                LOG.error("Error when trying add doc to message: file not found, or url is bad. Your param: {}", doc);
-                callback.onResult("false");
-                return;
-            }
-        }
-
-        byte[] docBytes;
-        switch (type) {
-
-            case "fromFile": {
-                try {
-                    docBytes = Files.readAllBytes(Paths.get(docFile.toURI()));
-                    fileNameField = docFile.getName();
-                } catch (IOException ignored) {
-                    LOG.error("Error when reading file {}", docFile.getAbsolutePath());
-                    callback.onResult("false");
-                    return;
-                }
-                break;
-            }
-
-            case "fromUrl": {
-                try {
-                    URLConnection conn = docUrl.openConnection();
-
-                    try {
-                        docBytes = Utils.toByteArray(conn);
-                        fileNameField = Utils.guessFileNameByContentType(conn.getContentType());
-                    } finally {
-                        Utils.close(conn);
-                    }
-                } catch (IOException ignored) {
-                    LOG.error("Error when reading URL {}", doc);
-                    callback.onResult("false");
-                    return;
-                }
-                break;
-            }
-
-            default: {
-                LOG.error("Bad file or url provided as doc: {}", doc);
-                return;
-            }
-        }
-
-        if (docBytes != null) {
-
-            JSONObject params_getMessagesUploadServer = new JSONObject().put("peer_id", peerId).put("type", doc.getString("type"));
-            api.call("docs.getMessagesUploadServer", params_getMessagesUploadServer, response -> {
-
-                if (response.toString().equalsIgnoreCase("false")) {
-                    LOG.error("Can't get messages upload server, aborting. Doc wont be attached to message.");
-                    callback.onResult("false");
-                    return;
-                }
-
-                String uploadUrl = new JSONObject(response.toString()).getString("upload_url");
-
-                MultipartUtility multipartUtility = new MultipartUtility(uploadUrl);
-                multipartUtility.addBytesPart("file", fileNameField, docBytes);
-                String response_uploadFileString = multipartUtility.finish();
-
-                if (response_uploadFileString.length() < 2 || response_uploadFileString.contains("error") || !response_uploadFileString.contains("file")) {
-                    LOG.error("Doc won't uploaded: {}", response_uploadFileString);
-                    callback.onResult("false");
-                    return;
-                }
-
-                JSONObject getFileStringResponse;
-
-                try {
-                    getFileStringResponse = new JSONObject(response_uploadFileString);
-                } catch (JSONException ignored) {
-                    LOG.error("Bad response of uploading file: {}", response_uploadFileString);
-                    callback.onResult("false");
-                    return;
-                }
-
-                if (!getFileStringResponse.has("file")) {
-                    LOG.error("Bad response of uploading doc, no 'file' param: {}", getFileStringResponse.toString());
-                    callback.onResult("false");
-                    return;
-                }
-
-                String fileParam = getFileStringResponse.getString("file");
-
-                JSONObject params_photosSaveMessagesPhoto = new JSONObject().put("file", fileParam);
-
-                api.call("docs.save", params_photosSaveMessagesPhoto, response1 -> {
-
-                    if (response1.toString().equalsIgnoreCase("false")) {
-                        LOG.error("Error when saving uploaded doc: response is 'false', see execution errors.");
-                        callback.onResult("false");
-                        return;
-                    }
-
-                    JSONObject response_saveMessagesPhotoe = new JSONArray(response1.toString()).getJSONObject(0);
-
-                    int ownerId = response_saveMessagesPhotoe.getInt("owner_id"), id = response_saveMessagesPhotoe.getInt("id");
-
-                    String attach = "doc" + ownerId + '_' + id;
-                    callback.onResult(attach);
-                });
-            });
-        }
     }
 
     /**
@@ -740,6 +233,7 @@ public class Message {
         }
 
         this.docsToUpload.add(new JSONObject().put("doc", doc).put("type", type.getType()));
+
         return this;
     }
 
@@ -750,8 +244,8 @@ public class Message {
      * @return this
      */
     public Message docAsync(String doc) {
-
         this.docAsync(doc, DocTypes.DOC);
+
         return this;
     }
 
@@ -762,7 +256,11 @@ public class Message {
      * @param callback response will returns to callback
      */
     public void sendVoiceMessage(String doc, Callback<Object>... callback) {
-        this.doc(doc, DocTypes.AUDIO_MESSAGE).send(callback);
+        String docAsAttach = upload.uploadDoc(doc, peerId, DocTypes.AUDIO_MESSAGE);
+
+        if (docAsAttach != null) this.attachments.add(docAsAttach);
+
+        send(callback);
     }
 
     /**
@@ -775,12 +273,12 @@ public class Message {
         if (photosToUpload.size() > 0) {
             String photo = photosToUpload.get(0);
             photosToUpload.remove(0);
-            uploadPhoto(photo, response -> {
+            upload.uploadPhotoAsync(photo, peerId, response -> {
                 if (!response.toString().equalsIgnoreCase("false")) {
                     this.attachments.addIfAbsent(response.toString());
                     send(callback);
                 } else {
-                    LOG.error("Some error occured when uploading photo.");
+                    LOG.error("Some error occurred when uploading photo.");
                 }
             });
             return;
@@ -789,12 +287,12 @@ public class Message {
         if (docsToUpload.size() > 0) {
             JSONObject doc = docsToUpload.get(0);
             docsToUpload.remove(0);
-            uploadDoc(doc, response -> {
+            upload.uploadDocAsync(doc, peerId, response -> {
                 if (!response.toString().equalsIgnoreCase("false")) {
                     this.attachments.addIfAbsent(response.toString());
                     send(callback);
                 } else {
-                    LOG.error("Some error occured when uploading doc.");
+                    LOG.error("Some error occurred when uploading doc.");
                 }
             });
             return;
@@ -905,10 +403,18 @@ public class Message {
      */
     public JSONArray getAttachments() {
 
-        JSONObject response = api.callSync("messages.getById", "message_ids", getMessageId());
+        JSONObject response;
+        if (isMessageFromChat()) {
+            response = api.callSync("messages.getByConversationMessageId", "peer_id", chatIdLong, "conversation_message_ids", messageId, "group_id", conversationMessageId);
+        } else {
+            response = api.callSync("messages.getById", "message_ids", getMessageId());
+        }
 
-        if (response.has("response") && response.getJSONObject("response").getJSONArray("items").getJSONObject(0).has("attachments"))
-            return response.getJSONObject("response").getJSONArray("items").getJSONObject(0).getJSONArray("attachments");
+        if (response.has("response") && response.getJSONObject("response").getJSONArray("items").length() > 0) {
+            if (response.getJSONObject("response").getJSONArray("items").getJSONObject(0).has("attachments")) {
+                return response.getJSONObject("response").getJSONArray("items").getJSONObject(0).getJSONArray("attachments");
+            }
+        }
 
         return new JSONArray();
     }
@@ -1153,7 +659,7 @@ public class Message {
     }
 
     private void setAttachments(JSONObject attachments) {
-
+        if (attachments == null) return;
         this.attachmentsOfReceivedMessage = attachments;
     }
 

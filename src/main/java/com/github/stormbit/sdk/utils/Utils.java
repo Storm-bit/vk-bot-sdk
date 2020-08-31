@@ -31,24 +31,6 @@ public class Utils {
     public static JSONObject _hashes = new JSONObject();
     public static final String URL = "https://vk.com/dev";
     public static final double version = 5.92;
-    public static String longpollServer = "";
-
-    /**
-     * Analog of JS setTimeout
-     *
-     * @param runnable runnable
-     * @param delay    delay
-     */
-    public static void setTimeout(Runnable runnable, int delay) {
-        new Thread(() -> {
-            try {
-                Thread.sleep(delay);
-                runnable.run();
-            } catch (InterruptedException e) {
-                System.err.println(e.toString());
-            }
-        }).start();
-    }
 
     /**
      * Convert to URL params query
@@ -367,5 +349,13 @@ public class Utils {
     public static int getId(Client client) {
         JSONObject response = client.api().callSync("users.get").getJSONArray("response").getJSONObject(0);
         return response.getInt("id");
+    }
+
+    public static String getMimeType(byte[] bytes) throws IOException {
+        InputStream is = new BufferedInputStream(new ByteArrayInputStream(bytes));
+        String mimeType = URLConnection.guessContentTypeFromStream(is);
+        mimeType = mimeType.substring(mimeType.lastIndexOf('/') + 1).replace("jpeg", "jpg");
+
+        return mimeType;
     }
 }
