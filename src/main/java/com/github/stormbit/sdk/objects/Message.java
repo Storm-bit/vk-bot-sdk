@@ -5,6 +5,7 @@ import com.github.stormbit.sdk.clients.Client;
 import com.github.stormbit.sdk.utils.vkapi.API;
 import com.github.stormbit.sdk.utils.vkapi.Upload;
 import com.github.stormbit.sdk.utils.vkapi.docs.DocTypes;
+import com.github.stormbit.sdk.utils.vkapi.keyboard.Keyboard;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -22,7 +23,9 @@ public class Message {
 
     private static final Logger LOG = LoggerFactory.getLogger(Message.class);
 
-    private Integer messageId, conversationMessageId, peerId, timestamp, randomId, stickerId, chatId, chatIdLong;
+    private Integer messageId, peerId, timestamp, randomId, stickerId, chatId, chatIdLong;
+    private Keyboard keyboard;
+    private JSONObject payload = new JSONObject();
     private String text, title;
     private API api;
     private Upload upload;
@@ -59,7 +62,7 @@ public class Message {
      * @param attachments message attachments
      * @param randomId random id
      */
-    public Message(Client client, Integer messageId, Integer peerId, Integer timestamp, String text, JSONObject attachments, Integer randomId) {
+    public Message(Client client, Integer messageId, Integer peerId, Integer timestamp, String text, JSONObject attachments, Integer randomId, JSONObject payload) {
 
         setMessageId(messageId);
         setPeerId(peerId);
@@ -67,6 +70,7 @@ public class Message {
         setText(text);
         setAttachments(attachments);
         setRandomId(randomId);
+        setPayload(payload);
         setTitle(attachments != null && attachments.has("title") ? attachments.getString("title") : " ... ");
         this.client = client;
         api = client.api();
@@ -136,6 +140,11 @@ public class Message {
      */
     public Message title(Object title) {
         this.title = String.valueOf(title);
+        return this;
+    }
+
+    public Message keyboard(Keyboard button) {
+        this.keyboard = button;
         return this;
     }
 
@@ -315,6 +324,7 @@ public class Message {
         if (attachments.size() > 0) params.put("attachment", String.join(",", attachments));
         if (forwardedMessages.size() > 0) params.put("forward_messages", String.join(",", forwardedMessages));
         if (stickerId != null && stickerId > 0) params.put("sticker_id", stickerId);
+        if (keyboard != null) params.put("keyboard", new JSONObject(keyboard));
 
         api.call("messages.send", params, response -> {
             if (callback.length > 0) {
@@ -405,7 +415,7 @@ public class Message {
 
         JSONObject response;
         if (isMessageFromChat()) {
-            response = api.callSync("messages.getByConversationMessageId", "peer_id", chatIdLong, "conversation_message_ids", messageId, "group_id", conversationMessageId);
+            response = api.callSync("messages.getByConversationMessageId", "peer_id", chatIdLong, "conversation_message_ids", messageId, "group_id", client.getId());
         } else {
             response = api.callSync("messages.getById", "message_ids", getMessageId());
         }
@@ -679,6 +689,24 @@ public class Message {
         this.title = title;
     }
 
+    public Keyboard getKeyboard() {
+        return keyboard;
+    }
+
+    public void setKeyboard(Keyboard keyboard) {
+        this.keyboard = keyboard;
+    }
+
+    public JSONObject getPayload() {
+        return payload;
+    }
+
+    public void setPayload(JSONObject payload) {
+        if (payload == null) return;
+
+        this.payload = payload;
+    }
+
     private String[] getForwardedMessagesIds() {
 
         if (attachmentsOfReceivedMessage.has("fwd")) {
@@ -697,6 +725,7 @@ public class Message {
                 ",\"random_id\":" + randomId +
                 ",\"text\":\"" + text + '\"' +
                 ",\"attachments\":" + attachmentsOfReceivedMessage.toString() +
+                ",\"payload\":" + payload.toString() +
                 '}';
     }
 }

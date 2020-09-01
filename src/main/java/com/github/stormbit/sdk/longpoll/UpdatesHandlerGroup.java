@@ -174,6 +174,8 @@ public class UpdatesHandlerGroup extends UpdatesHandler {
 
         String messageText = updateObject.getString("text");
 
+        JSONObject payload = updateObject.has("payload") ? new JSONObject(updateObject.getString("payload")) : new JSONObject();
+
         JSONObject attachments = updateObject.getJSONArray("attachments").length() > 0 ? updateObject.getJSONArray("attachments").getJSONObject(0) : null;
 
         Integer randomId = updateObject.getInt("random_id");
@@ -194,7 +196,8 @@ public class UpdatesHandlerGroup extends UpdatesHandler {
                 timestamp,
                 messageText,
                 attachments,
-                randomId
+                randomId,
+                payload
         );
 
         if (chatId > 0) {
