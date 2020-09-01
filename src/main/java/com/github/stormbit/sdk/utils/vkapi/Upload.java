@@ -97,6 +97,7 @@ public class Upload {
     /**
      * Async uploading photos
      * @param photoBytes Photo bytes
+     * @param peerId peer id
      * @param callback callback
      */
     public void uploadPhotoAsync(byte[] photoBytes, int peerId, Callback<Object> callback) {
@@ -183,6 +184,7 @@ public class Upload {
     /**
      * Async uploading doc
      * @param doc Doc link: url, from disk or already uploaded to VK as doc{owner_id}_{id}
+     * @param peerId peer id
      * @param callback callback
      */
     public void uploadDocAsync(JSONObject doc, int peerId, Callback<Object> callback) {
@@ -451,6 +453,7 @@ public class Upload {
      * Upload group cover by file from url or from disk
      *
      * @param cover    cover
+     * @param groupId group id
      * @param callback callback
      */
     public void uploadCoverGroupAsync(String cover, int groupId, Callback<Object> callback) {
@@ -665,7 +668,7 @@ public class Upload {
 
     /**
      * @param photo String URL, link to vk photo or path to file
-     * @param peerId peer_id
+     * @param peerId peer id
      * @return attachment
      */
     public String uploadPhoto(String photo, int peerId) {
@@ -726,7 +729,7 @@ public class Upload {
      * Synchronous adding photo to the message
      *
      * @param photoBytes photo bytes
-     * @param peerId peer_id
+     * @param peerId peer id
      * @return attachment
      */
     public String uploadPhoto(byte[] photoBytes, int peerId) {
@@ -792,6 +795,7 @@ public class Upload {
     /**
      * Synchronous uploading doc
      * @param doc       String URL, link to vk doc or path to file
+     * @param peerId peer id
      * @param typeOfDoc Type of doc, 'audio_message' or 'graffiti' ('doc' as default)
      * @return attachment
      */
@@ -859,7 +863,7 @@ public class Upload {
 
     /**
      * @param docBytes bytes
-     * @param peerId peer_id
+     * @param peerId peer id
      * @param typeOfDoc Type of doc, 'audio_message' or 'graffiti' ('doc' as default)
      * @param fileNameField file name field
      * @return attachment
