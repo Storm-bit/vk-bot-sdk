@@ -30,6 +30,11 @@ public class Upload {
 
     /* Async methods */
 
+    /**
+     * @param photo String URL, link to vk photo or path to file
+     * @param peerId peer id
+     * @param callback callback
+     */
     public void uploadPhotoAsync(String photo, int peerId, Callback<Object> callback) {
         String type = null;
         File photoFile = new File(photo);
@@ -307,6 +312,12 @@ public class Upload {
         }
     }
 
+    /**
+     *
+     * @param photo String URL, link to vk photo or path to file
+     * @param chatId chat id
+     * @param callback callback
+     */
     public void uploadPhotoChatAsync(String photo, int chatId, Callback<Object> callback) {
         String type = null;
         File photoFile = new File(photo);
@@ -365,6 +376,11 @@ public class Upload {
         uploadPhotoChatAsync(photoBytes, chatId, callback);
     }
 
+    /**
+     * @param photoBytes bytes
+     * @param chatId chat id
+     * @param callback callback
+     */
     public void uploadPhotoChatAsync(byte[] photoBytes, int chatId, Callback<Object> callback) {
         if (photoBytes != null) {
             JSONObject params_getMessagesUploadServer = new  JSONObject().put("chat_id", chatId);
@@ -530,8 +546,14 @@ public class Upload {
 
     /* Sync */
 
-    private String uploadPhotoToAlbum(String photo, int id, int album_id) {
-        if (id == 0) {
+    /**
+     * @param photo String URL, link to vk photo or path to file
+     * @param group_id group id
+     * @param album_id album id
+     * @return attachment
+     */
+    public String uploadPhotoToAlbum(String photo, int group_id, int album_id) {
+        if (group_id == 0) {
             log.error("Please, provide group_id when initialising the client, because it's impossible to upload cover to group not knowing it id.");
             return null;
         }
@@ -558,10 +580,17 @@ public class Upload {
             }
         }
 
-        return uploadPhotoToAlbum(bytes, id, album_id);
+        return uploadPhotoToAlbum(bytes, group_id, album_id);
     }
 
-    public String uploadPhotoToAlbum(byte[] photoBytes, int album_id, int group_id) {
+    /**
+     * @param photoBytes bytes
+     * @param album_id album id
+     * @param group_id group id
+     * @return attachment
+     */
+
+    public String uploadPhotoToAlbum(byte[] photoBytes, int group_id, int album_id) {
         if (photoBytes != null) {
             JSONObject params_getMessagesUploadServer = new JSONObject().put("album_id", album_id);
 
@@ -635,8 +664,9 @@ public class Upload {
     }
 
     /**
-     * @param photo String URL, link to vk doc or path to file
-     * @return this
+     * @param photo String URL, link to vk photo or path to file
+     * @param peerId peer_id
+     * @return attachment
      */
     public String uploadPhoto(String photo, int peerId) {
         String type = null;
@@ -696,7 +726,8 @@ public class Upload {
      * Synchronous adding photo to the message
      *
      * @param photoBytes photo bytes
-     * @return this
+     * @param peerId peer_id
+     * @return attachment
      */
     public String uploadPhoto(byte[] photoBytes, int peerId) {
         if (photoBytes != null) {
@@ -825,6 +856,14 @@ public class Upload {
 
         return uploadDoc(docBytes, peerId, typeOfDoc, fileNameField);
     }
+
+    /**
+     * @param docBytes bytes
+     * @param peerId peer_id
+     * @param typeOfDoc Type of doc, 'audio_message' or 'graffiti' ('doc' as default)
+     * @param fileNameField file name field
+     * @return attachment
+     */
 
     public String uploadDoc(byte[] docBytes, int peerId, DocTypes typeOfDoc, String fileNameField) {
         if (docBytes != null) {
